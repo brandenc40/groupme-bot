@@ -9,9 +9,6 @@
 
 from groupme_bot import Bot, Router, Callback, ImageAttachment, LocationAttachment
 
-# create the bot router
-router = Router()
-
 
 # define bot 1 and adding a handler
 bot1 = Bot('Fake bot 1', bot_id='bot1-id', api_token='bot1-token', group_id='bot1-group-id')
@@ -22,8 +19,6 @@ def bot1_help(_: Callback):
     image_attachment = ImageAttachment(image_url=img_url)
     location_attachment = LocationAttachment(name="A Location", lat=100.000, lng=46.000)
     bot1.post_message("this is a message with attachments", [image_attachment, location_attachment])
-
-router.add_bot(bot=bot1, callback_route="/bot1")
 
 
 
@@ -38,8 +33,13 @@ def bot2_mention_all(_: Callback):
 def test_cron_task():
     print("this is a scheduled function at the top of every hour")
 
-router.add_bot(bot=bot2, callback_route="/bot2")
 
+# create the bot router
+router = Router()
+
+# add the bots to the bot router
+router.add_bot(bot=bot1, callback_route="/bot1")
+router.add_bot(bot=bot2, callback_route="/bot2")
 
 if __name__ == '__main__':
     # run both bots
