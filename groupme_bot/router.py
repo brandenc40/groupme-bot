@@ -32,7 +32,7 @@ class Router:
 
         self._bot_summary[callback_route] = bot.bot_name
 
-    def run(self, host: str = "0.0.0.0", port: int = 8000, debug: bool = True):
+    def run(self, host: str = "0.0.0.0", port: int = 8000, debug: bool = False):
         @self._app.route('/', methods=['GET'])
         def index():
             job_summary = []
