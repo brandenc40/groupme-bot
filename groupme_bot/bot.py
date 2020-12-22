@@ -48,7 +48,9 @@ class Bot:
     def cron_task(self, *args, **kwargs):
         """A decorator that registers a function to be run on set cron schedule
         
-        Available arguments (https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html):
+        Uses APScheudler cron trigger. Details here: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
+        
+        Available arguments:
             - year (int|str) – 4-digit year
             - month (int|str) – month (1-12)
             - day (int|str) – day of the (1-31)
