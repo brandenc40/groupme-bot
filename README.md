@@ -17,7 +17,7 @@ from groupme_bot import Bot, Router, Callback, ImageAttachment, LocationAttachme
 # define bot 1 and add a handler
 bot1 = Bot('Fake bot 1', bot_id='bot1-bot-id', api_token='bot1-groupme-api-token', group_id='bot1-group-id')
 
-@bot1.callback_handler(r'\\attachments.+')  # message starts with the string '\attachments'
+@bot1.callback_handler(r'^\\attachments')  # message starts with the string '\attachments'
 def bot1_with_attachment(_: Callback):
     img_url = bot1.image_url_to_groupme_image_url(image_url="https://images.indianexpress.com/2020/12/Doodle.jpg")
     image_attachment = ImageAttachment(image_url=img_url)
@@ -29,7 +29,7 @@ def bot1_with_attachment(_: Callback):
 # define bot 2 and add a handler and a cron task
 bot2 = Bot('Fake bot 2', bot_id='bot2-bot-id', api_token='bot2-groupme-api-token', group_id='bot2-group-id')
 
-@bot2.callback_handler(r'\\all.+')  # message starts with the string '\all'
+@bot2.callback_handler(r'^\\all')  # message starts with the string '\all'
 def bot2_mention_all(_: Callback):
     bot2.mention_all()
 
