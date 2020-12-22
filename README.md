@@ -27,7 +27,7 @@ router.add_bot(bot=bot1, callback_route="/bot1")
 
 
 
-# define bot 2 and adding a handler and a cron job
+# define bot 2 and adding a handler and a cron task
 bot2 = Bot('Fake bot 2', bot_id='bot2-id', api_token='bot2-token', group_id='bot2-group-id')
 
 @bot2.callback_handler(r'\\all.+')  # message starts with the string '\all'
@@ -35,7 +35,7 @@ def bot2_mention_all(_: Callback):
     bot2.mention_all()
 
 @bot2.cron_task(minute=0, hour='*', timezone='America/Chicago')
-def test_cron_job():
+def test_cron_task():
     print("this is a scheduled function at the top of every hour")
 
 router.add_bot(bot=bot2, callback_route="/bot2")
