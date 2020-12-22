@@ -31,5 +31,10 @@ class SplitAttachment(Attachment):
 
 
 class EmojiAttachment(Attachment):
-    def __init__(self, placeholder: str, charmap: List[List[int, int]]):
-        Attachment.__init__(self, type='split', placeholder=placeholder, charmap=charmap)
+    def __init__(self, placeholder: str, charmap: List[List[Union[int, int]]]):
+        Attachment.__init__(self, type='emoji', placeholder=placeholder, charmap=charmap)
+
+
+class MentionsAttachment(Attachment):
+    def __init__(self, loci: List[List[int]], user_ids: List[int]):
+        Attachment.__init__(self, type='mentions', loci=loci, user_ids=user_ids)

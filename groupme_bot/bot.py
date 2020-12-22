@@ -4,7 +4,7 @@ from typing import Any, List
 
 import requests
 
-from .attachment import Attachment
+from .attachment import Attachment, MentionsAttachment
 from .callback import Callback
 
 BOT_INDEX_URL = 'https://api.groupme.com/v3/bots'
@@ -73,7 +73,7 @@ class Bot:
         data = {
             "bot_id": self.bot_id,
             "text": msg,
-            "attachments": attachments
+            "attachments": [attachment.to_dict() for attachment in attachments]
         }
         response = requests.post(BOT_POST_URL, data=json.dumps(data), headers={'Content-Type': 'application/json'})
         response.raise_for_status()
@@ -111,8 +111,4 @@ class Bot:
             user_ids.append(member['user_id'])
             loci.append([len(text), len(member['nickname']) + 1])
             text += '@{} '.format(member['nickname'])
-        self.post_message(text, [{
-            "loci": loci,
-            "type": "mentions",
-            "user_ids": user_ids
-        }])
+        self.post_message(text, [MentionsAttachment(loci=loci, user_ids=user_ids)])

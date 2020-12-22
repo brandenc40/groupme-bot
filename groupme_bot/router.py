@@ -20,7 +20,7 @@ class Router:
         self._cron = BackgroundScheduler(daemon=True)
 
     def add_bot(self, bot: Bot, callback_route: str):
-        endpoint = callback_route.removeprefix("/") + '-callback-handler'
+        endpoint = callback_route.replace("/", "") + '-callback-handler'
 
         @self._app.route(callback_route, endpoint=endpoint, methods=['POST'])
         def callback_handler():

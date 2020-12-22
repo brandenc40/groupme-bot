@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../../')
 from groupme_bot import Bot, Router, Callback, ImageAttachment, LocationAttachment
 
 # setup the bot router with both bots having their own callback
