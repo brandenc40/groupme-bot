@@ -1,39 +1,38 @@
-import sys
-sys.path.append('../../')
 from groupme_bot import Bot, Router, Callback, ImageAttachment, LocationAttachment
 
-# setup the bot router with both bots having their own callback
-router = Router()
 
-# define bot 1 and adding a handler
-bot1 = Bot('Fake bot 1', bot_id='bot1-id', api_token='bot1-token', group_id='bot1-group-id')
-
+# define bot 1 and add a handler
+bot1 = Bot('Fake bot 1', bot_id='bot1-bot-id', api_token='bot1-groupme-api-token', group_id='bot1-group-id')
 
 @bot1.callback_handler(r'\\attachments.+')  # message starts with the string '\attachments'
-def bot1_help(_: Callback):
+def bot1_with_attachment(_: Callback):
     img_url = bot1.image_url_to_groupme_image_url(image_url="https://images.indianexpress.com/2020/12/Doodle.jpg")
     image_attachment = ImageAttachment(image_url=img_url)
     location_attachment = LocationAttachment(name="A Location", lat=100.000, lng=46.000)
-    bot1.post_message("this is a help message for bot1", [image_attachment, location_attachment])
+    bot1.post_message("this is a message with attachments", [image_attachment, location_attachment])
 
 
-router.add_bot(bot=bot1, callback_route="/bot1")
 
-# define bot 2 and adding a handler and a cron job
-bot2 = Bot('Fake bot 2', bot_id='bot2-id', api_token='bot2-token', group_id='bot2-group-id')
-
+# define bot 2 and add a handler and a cron task
+bot2 = Bot('Fake bot 2', bot_id='bot2-bot-id', api_token='bot2-groupme-api-token', group_id='bot2-group-id')
 
 @bot2.callback_handler(r'\\all.+')  # message starts with the string '\all'
 def bot2_mention_all(_: Callback):
     bot2.mention_all()
 
-
+# Availble cron_task arguments: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
 @bot2.cron_task(minute=0, hour='*', timezone='America/Chicago')
-def test_cron_job():
+def test_cron_task():
     print("this is a scheduled function at the top of every hour")
 
 
+# create the bot router
+router = Router()
+
+# add the bots to the bot router
+router.add_bot(bot=bot1, callback_route="/bot1")
 router.add_bot(bot=bot2, callback_route="/bot2")
+
 
 if __name__ == '__main__':
     # run both bots
