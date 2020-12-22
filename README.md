@@ -2,7 +2,6 @@
 
 #### Easily build one or more bots into a single application. Supports regex handlers of incoming messages as well as cron jobs to perform functions on a regular cadence. Leverages decorators to cleanly add new functionality your bots.
 
-- Availble cron_task arguments: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
 
 ```
 pip install groupme-bot
@@ -34,6 +33,7 @@ bot2 = Bot('Fake bot 2', bot_id='bot2-bot-id', api_token='bot2-groupme-api-token
 def bot2_mention_all(_: Callback):
     bot2.mention_all()
 
+# Availble cron_task arguments: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
 @bot2.cron_task(minute=0, hour='*', timezone='America/Chicago')
 def test_cron_task():
     print("this is a scheduled function at the top of every hour")
