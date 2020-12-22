@@ -1,4 +1,10 @@
+import os
 from setuptools import setup
+
+
+def read(file_name):
+    return open(os.path.join(os.path.dirname(__file__), file_name)).read()
+
 
 setup(
     name='groupme-bot',
@@ -9,14 +15,16 @@ setup(
     author_email='brandencolen@anl.gov',
     license='MIT',
     packages=['groupme_bot'],
+    long_description=read('README'),
     install_requires=[
-        'flask'
+        'flask',
+        'waitress',
+        'apscheduler',
+        'requests'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Libraries :: Python Modules'
     ],
