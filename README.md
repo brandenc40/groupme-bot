@@ -18,7 +18,7 @@ from groupme_bot import Bot, Router, Callback, ImageAttachment, LocationAttachme
 bot1 = Bot('Fake bot 1', bot_id='bot1-bot-id', api_token='bot1-groupme-api-token', group_id='bot1-group-id')
 
 @bot1.callback_handler(r'\\attachments.+')  # message starts with the string '\attachments'
-def bot1_help(_: Callback):
+def bot1_with_attachment(_: Callback):
     img_url = bot1.image_url_to_groupme_image_url(image_url="https://images.indianexpress.com/2020/12/Doodle.jpg")
     image_attachment = ImageAttachment(image_url=img_url)
     location_attachment = LocationAttachment(name="A Location", lat=100.000, lng=46.000)
