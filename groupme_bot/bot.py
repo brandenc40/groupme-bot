@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import re
 from typing import Any, List, Callable
@@ -5,7 +7,7 @@ from typing import Any, List, Callable
 import requests
 
 from .attachment import Attachment, MentionsAttachment
-from .context import Context
+from .callback import Callback
 
 BASE_URL = 'https://api.groupme.com/v3'
 BOT_INDEX_URL = BASE_URL + '/bots'
@@ -16,6 +18,21 @@ GROUP_ME_IMAGES_URL = 'https://image.groupme.com/pictures'
 
 class HandlerPatternExistsError(Exception):
     pass
+
+
+class Context:
+    __slots__ = ['bot', 'callback']
+
+    def __init__(self, bot: Bot, callback: Callback):
+        """
+        Context provided to every handler/scheduled function run by the bot. This provides a clean object containing
+        bot the bot in use and the Callback that was sent.
+
+        :param Bot bot:
+        :param Callback callback:
+        """
+        self.bot = bot
+        self.callback = callback
 
 
 class Bot(object):

@@ -6,8 +6,7 @@ from waitress import serve
 from flask import request, Flask, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler, BaseScheduler
 
-from .context import Context
-from .bot import Bot
+from .bot import Bot, Context
 from .callback import Callback
 
 
