@@ -2,8 +2,9 @@ import atexit
 
 from waitress import serve
 from flask import request, Flask, jsonify
-from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.schedulers.background import BackgroundScheduler, BaseScheduler
 
+from .context import Context
 from .bot import Bot
 from .callback import Callback
 
@@ -12,39 +13,65 @@ class RouteExistsError(Exception):
     pass
 
 
-class Router:
-    _bot_summary = {}
-
-    def __init__(self, flask_app: Flask = None):
+class Router(object):
+    def __init__(self, flask_app: Flask = None, scheduler: BaseScheduler = None):
         self._app = flask_app if flask_app else Flask(__name__)
-        self._cron = BackgroundScheduler(daemon=True)
+        self._scheduler = scheduler if scheduler else BackgroundScheduler(daemon=True)
+
+        self._bots = dict()
+        self._jobs = list()
+
+    def _summarize(self):
+        job_summary = []
+        jobs = self._scheduler.get_jobs()
+        if jobs:
+            for job in jobs:
+                job_summary.append(str(job))
+
+        bot_summary = {}
+        for path, bot in self._bots.items():
+            bot_summary[path] = str(bot)
+
+        return jsonify({'endpoints': bot_summary, 'jobs': job_summary})
 
     def add_bot(self, bot: Bot, callback_route: str):
-        endpoint = callback_route.replace("/", "") + '-callback-handler'
-
-        @self._app.route(callback_route, endpoint=endpoint, methods=['POST'])
-        def callback_handler():
-            request_data = request.get_json(silent=True)
-            bot.handle_callback(Callback(request_data))
-
-        for args, kwargs, func in bot.iter_cron_jobs():
-            self._cron.add_job(func, 'cron', *args, **kwargs)
-
-        self._bot_summary[callback_route] = bot.bot_name
+        self._bots[callback_route] = bot
+        for job in bot.cron_jobs:
+            self._jobs.append({"bot": bot, "job": job})
 
     def run(self, host: str = "0.0.0.0", port: int = 8000, debug: bool = False):
-        @self._app.route('/', methods=['GET'])
-        def index():
-            job_summary = []
-            jobs = self._cron.get_jobs()
-            if jobs:
-                for job in jobs:
-                    job_summary.append(str(job))
-            return jsonify({'endpoints': self._bot_summary, 'jobs': job_summary})
+        # add app summary to index page
+        self._app.add_url_rule('/', 'index', self._summarize, methods=['GET'])
+
+        def callback_handler():
+            request_data = request.get_json(silent=True)
+            ctx = Context(self._bots[request.path], Callback(request_data))
+            try:
+                self._bots[request.path].handle_callback(ctx)
+                return 'Success'
+            except Exception as e:
+                return 'Error: ' + str(e)
+
+        # add routes to be handled
+        for route in self._bots.keys():
+            self._app.add_url_rule(
+                route,
+                route.replace("/", "") + '-callback-handler',
+                callback_handler,
+                methods=['POST']
+            )
+
+        # add scheduler jobs
+        for job in self._jobs:
+            self._scheduler.add_job(
+                job['job']['func'],
+                job['job']['trigger'],
+                args=(Context(job['bot'], Callback({})), ),
+                **job['job']['kwargs'])
 
         # start the cron scheduler and setup a shutdown on exit
-        self._cron.start()
-        atexit.register(lambda: self._cron.shutdown(wait=False))
+        self._scheduler.start()
+        atexit.register(lambda: self._scheduler.shutdown(wait=False))
 
         # run the flask app
         if debug:

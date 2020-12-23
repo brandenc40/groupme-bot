@@ -6,12 +6,14 @@ A simple bot builder for GroupMe
 from .bot import Bot
 from .router import Router
 from .callback import Callback
-from .attachment import ImageAttachment, LocationAttachment, SplitAttachment, EmojiAttachment
+from .context import Context
+from .attachment import ImageAttachment, LocationAttachment, SplitAttachment, EmojiAttachment, MentionsAttachment
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "Branden Colen"
 __all__ = [
-    "Bot", "Router", "Callback",
+    "Bot", "Router", "Callback", "Context",
     "ImageAttachment", "LocationAttachment",
-    "SplitAttachment", "EmojiAttachment"
+    "SplitAttachment", "EmojiAttachment",
+    "MentionsAttachment"
 ]

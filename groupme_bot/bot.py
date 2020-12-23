@@ -5,7 +5,7 @@ from typing import Any, List
 import requests
 
 from .attachment import Attachment, MentionsAttachment
-from .callback import Callback
+from .context import Context
 
 BOT_INDEX_URL = 'https://api.groupme.com/v3/bots'
 BOT_POST_URL = 'https://api.groupme.com/v3/bots/post'
@@ -17,38 +17,40 @@ class HandlerPatternExistsError(Exception):
     pass
 
 
-class Bot:
-    _handler_functions = {}
-    _cron_functions = []
-
-    def __init__(self, bot_name: str, bot_id: str, api_token: str, group_id: str):
+class Bot(object):
+    def __init__(self, bot_name: str, bot_id: str, groupme_api_token: str, group_id: str):
         self.bot_name = bot_name
         self.bot_id = bot_id
-        self.api_token = api_token
+        self.api_token = groupme_api_token
         self.group_id = group_id
+
+        self._handler_functions = {}
+        self._cron_jobs = []
 
     def __str__(self):
         return "Bot Name: %s, # Handlers: %d, # Cron Tasks: %d" % \
-               (self.bot_name, len(self._handler_functions), len(self._cron_functions))
+               (self.bot_name, len(self._handler_functions), len(self._cron_jobs))
 
-    def callback_handler(self, regex_pattern: str):
-        """A decorator that is used to register a regex pattern as to a bot handler function. If the regex pattern
+    @property
+    def cron_jobs(self) -> List[dict]:
+        return self._cron_jobs
+
+    def add_callback_handler(self, regex_pattern: str, func: Any):
+        """Registers a regex pattern as to a bot handler function. If the regex pattern
         is found in a message from a GroupMe user, the function will be called.
 
         :param regex_pattern: The pattern to search for in the message text
+        :param Callable func: The function to be called when the pattern is matched
         """
-        def decorator(f):
-            if regex_pattern in self._handler_functions:
-                raise HandlerPatternExistsError(
-                    "The pattern `" + regex_pattern + "` is already registered to a handler")
-            self._handler_functions[regex_pattern] = f
-            return f
-        return decorator
+        if regex_pattern in self._handler_functions:
+            raise HandlerPatternExistsError(
+                "The pattern `" + regex_pattern + "` is already registered to a handler")
+        self._handler_functions[regex_pattern] = func
 
-    def cron_task(self, *args, **kwargs):
-        """A decorator that registers a function to be run on set cron schedule
+    def add_cron_task(self, func: Any, **kwargs) -> None:
+        """Registers a function to be run on set cron schedule.
         
-        Uses APScheudler cron trigger. Details here: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
+        Uses APScheduler cron trigger. Details here: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
         
         Available arguments:
             - year (int|str) – 4-digit year
@@ -63,22 +65,21 @@ class Bot:
             - end_date (datetime|str) – latest possible date/time to trigger on (inclusive)
             - timezone (datetime.tzinfo|str) – time zone to use for the date/time calculations (defaults to scheduler timezone)
             - jitter (int|None) – advance or delay the job execution by jitter seconds at most.
+
+        :param Callable func: The function to be called when the cron trigger is triggered
         """
-        def decorator(f):
-            self._cron_functions.append({'args': args, 'kwargs': kwargs, 'f': f})
-            return f
-        return decorator
+        self._cron_jobs.append({
+            'func': func,
+            'trigger': 'cron',
+            'kwargs': kwargs
+        })
 
-    def iter_cron_jobs(self):
-        for job in self._cron_functions:
-            yield job['args'], job['kwargs'], job['f']
-
-    def handle_callback(self, callback: Callback) -> Any:
-        if callback.is_from_user():
-            text = callback.text.lower().strip()
+    def handle_callback(self, ctx: Context) -> Any:
+        if ctx.callback.is_from_user():
+            text = ctx.callback.text.lower().strip()
             for pattern, func in self._handler_functions.items():
                 if re.search(pattern, text):
-                    return func(callback)
+                    return func(ctx)
 
     def post_message(self, msg: str, attachments: List[Attachment] = None) -> requests.Response:
         """Posts a bot message to the group with optional attachments.
@@ -87,10 +88,14 @@ class Bot:
         :param List[dict] attachments: (optional) Attachments to send in the message
         :return requests.Response: The POST request response object
         """
+        if attachments:
+            attachments = [attachment.to_dict() for attachment in attachments]
+        else:
+            attachments = []
         data = {
             "bot_id": self.bot_id,
             "text": msg,
-            "attachments": [attachment.to_dict() for attachment in attachments]
+            "attachments": attachments
         }
         response = requests.post(BOT_POST_URL, data=json.dumps(data), headers={'Content-Type': 'application/json'})
         response.raise_for_status()
@@ -114,7 +119,7 @@ class Bot:
         return out['payload']['picture_url']
 
     def get_group_summary(self) -> dict:
-        """Get the summary of the group"""
+        """Get a summary of the group"""
         out = requests.get(GROUPS_URL + self.group_id, params={'token': self.api_token})
         out.raise_for_status()
         return out.json()['response']

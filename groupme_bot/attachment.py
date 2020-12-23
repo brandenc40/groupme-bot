@@ -8,7 +8,7 @@ class Attachment:
     def to_dict(self):
         out = {}
         for key, value in self._kwargs.items():
-            if key == 'charmap':
+            if key in ('charmap', 'loci', 'user_ids'):
                 out[key] = value if value else []
             else:
                 out[key] = str(value)

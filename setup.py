@@ -1,5 +1,8 @@
 import os
+
 from setuptools import setup
+
+import groupme_bot
 
 
 def read(file_name):
@@ -8,14 +11,14 @@ def read(file_name):
 
 setup(
     name='groupme-bot',
-    version='0.1.0',
+    version=groupme_bot.__version__,
     description='A simple bot builder for GroupMe',
     url='https://github.com/brandenc40/groupme-bot',
-    author='Branden Colen',
+    author=groupme_bot.__author__,
     author_email='brandencolen@anl.gov',
     license='MIT',
     packages=['groupme_bot'],
-    long_description=read('README'),
+    long_description=read('README.md'),
     install_requires=[
         'flask',
         'waitress',
