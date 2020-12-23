@@ -28,7 +28,7 @@ bot2 = Bot('Fake bot 2',
            group_id='fake-group-id')
 
 # Available cron_task arguments: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
-bot1.add_cron_task(cron_task, minute=21, hour='*', timezone='America/Chicago')
+bot1.add_cron_task(cron_task, minute=0, hour='*', timezone='America/Chicago')
 bot1.add_callback_handler(r'^\\attachments', attachments)  # message starts with the string '\attachments'
 bot1.add_callback_handler(r'^\\all', mention_all)  # message starts with the string '\all'
 bot2.add_callback_handler(r'^\\all', mention_all)  # message starts with the string '\all'
