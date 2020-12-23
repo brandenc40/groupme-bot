@@ -7,10 +7,11 @@ import requests
 from .attachment import Attachment, MentionsAttachment
 from .context import Context
 
-BOT_INDEX_URL = 'https://api.groupme.com/v3/bots'
-BOT_POST_URL = 'https://api.groupme.com/v3/bots/post'
+BASE_URL = 'https://api.groupme.com/v3'
+BOT_INDEX_URL = BASE_URL + '/bots'
+BOT_POST_URL = BASE_URL + '/bots/post'
+GROUPS_URL = BASE_URL + '/groups/'
 GROUP_ME_IMAGES_URL = 'https://image.groupme.com/pictures'
-GROUPS_URL = 'https://api.groupme.com/v3/groups/'
 
 
 class HandlerPatternExistsError(Exception):
@@ -19,6 +20,16 @@ class HandlerPatternExistsError(Exception):
 
 class Bot(object):
     def __init__(self, bot_name: str, bot_id: str, groupme_api_token: str, group_id: str):
+        """
+        The Bot class represents a single bot that can contains multiple callback handlers and scheduled jobs.
+        Bots are run using the Router class.
+
+        :param bot_name: A unique name for this bot to be known as within this code. Does not impact the name
+            displayed in the GroupMe app.
+        :param bot_id: The Bot ID provided by GroupMe.
+        :param groupme_api_token: The GroupMe API token for access to group details.
+        :param group_id: The id of the GroupMe group in which the bot exists.
+        """
         self.bot_name = bot_name
         self.bot_id = bot_id
         self.api_token = groupme_api_token
@@ -27,28 +38,34 @@ class Bot(object):
         self._handler_functions = {}
         self._cron_jobs = []
 
+    @property
+    def cron_jobs(self) -> List[dict]:
+        """
+        All list of cron jobs associated with this bot.
+
+        :return List[dict]:
+        """
+        return self._cron_jobs
+
     def __str__(self):
         return "%s: %d callback handlers, %d cron jobs" \
                % (self.bot_name, len(self._handler_functions), len(self._cron_jobs))
 
-    @property
-    def cron_jobs(self) -> List[dict]:
-        return self._cron_jobs
-
     def add_callback_handler(self, regex_pattern: str, func: Callable[[Context], Any]) -> None:
-        """Registers a regex pattern as to a bot handler function. If the regex pattern
+        """
+        Registers a regex pattern as to a bot handler function. If the regex pattern
         is found in a message from a GroupMe user, the function will be called.
 
         :param regex_pattern: The pattern to search for in the message text
         :param Callable[[Context], Any] func: The function to be called when the pattern is matched
         """
         if regex_pattern in self._handler_functions:
-            raise HandlerPatternExistsError(
-                "The pattern `" + regex_pattern + "` is already registered to a handler")
+            raise HandlerPatternExistsError("The pattern `%s` is already registered to a handler" % regex_pattern)
         self._handler_functions[regex_pattern] = func
 
     def add_cron_job(self, func: Callable[[Context], Any], **kwargs) -> None:
-        """Registers a function to be run on set cron schedule.
+        """
+        Registers a function to be run on set cron schedule.
         
         Uses APScheduler cron trigger. Details here: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
         
@@ -74,19 +91,26 @@ class Bot(object):
             'kwargs': kwargs
         })
 
-    def handle_callback(self, ctx: Context) -> Any:
+    def handle_callback(self, ctx: Context) -> None:
+        """
+        The main method used to handle incoming messages. Callbacks will not be handled if they are messages that came
+        from the bot itself to prevent infinite loops.
+
+        :param Context ctx: The Context of the request containing the Callback and the Bot objects.
+        """
         if ctx.callback.user_id == self.bot_id:
             return
         text = ctx.callback.text.lower().strip()
         for pattern, func in self._handler_functions.items():
             if re.search(pattern, text):
-                return func(ctx)
+                func(ctx)
 
     def post_message(self, msg: str, attachments: List[Attachment] = None) -> requests.Response:
-        """Posts a bot message to the group with optional attachments.
+        """
+        Posts a bot message to the group with optional attachments.
 
         :param str msg: The message to be sent
-        :param List[dict] attachments: (optional) Attachments to send in the message
+        :param List[Attachment] attachments: (optional) Attachments to send in the message
         :return requests.Response: The POST request response object
         """
         if attachments:
@@ -120,13 +144,19 @@ class Bot(object):
         return out['payload']['picture_url']
 
     def get_group_summary(self) -> dict:
-        """Get a summary of the group"""
+        """
+        Get a summary of the group from the GroupMe API
+
+        :return dict:
+        """
         out = requests.get(GROUPS_URL + self.group_id, params={'token': self.api_token})
         out.raise_for_status()
         return out.json()['response']
 
     def mention_all(self) -> None:
-        """Mentions everybody in the group so they receive a notification"""
+        """
+        Mentions everybody in the group so they receive a notification
+        """
         text = ''
         user_ids = []
         loci = []

@@ -9,7 +9,7 @@ from .callback import Callback
 from .context import Context
 from .attachment import ImageAttachment, LocationAttachment, SplitAttachment, EmojiAttachment, MentionsAttachment
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 __author__ = "Branden Colen"
 __all__ = [
     "Bot", "Router", "Callback", "Context",
