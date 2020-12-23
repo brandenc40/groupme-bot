@@ -1,6 +1,6 @@
 import json
 import re
-from typing import Any, List
+from typing import Any, List, Callable
 
 import requests
 
@@ -28,26 +28,26 @@ class Bot(object):
         self._cron_jobs = []
 
     def __str__(self):
-        return "Bot Name: %s, # Handlers: %d, # Cron Tasks: %d" % \
-               (self.bot_name, len(self._handler_functions), len(self._cron_jobs))
+        return "%s: %d callback handlers, %d cron jobs" \
+               % (self.bot_name, len(self._handler_functions), len(self._cron_jobs))
 
     @property
     def cron_jobs(self) -> List[dict]:
         return self._cron_jobs
 
-    def add_callback_handler(self, regex_pattern: str, func: Any):
+    def add_callback_handler(self, regex_pattern: str, func: Callable[[Context], Any]) -> None:
         """Registers a regex pattern as to a bot handler function. If the regex pattern
         is found in a message from a GroupMe user, the function will be called.
 
         :param regex_pattern: The pattern to search for in the message text
-        :param Callable func: The function to be called when the pattern is matched
+        :param Callable[[Context], Any] func: The function to be called when the pattern is matched
         """
         if regex_pattern in self._handler_functions:
             raise HandlerPatternExistsError(
                 "The pattern `" + regex_pattern + "` is already registered to a handler")
         self._handler_functions[regex_pattern] = func
 
-    def add_cron_task(self, func: Any, **kwargs) -> None:
+    def add_cron_job(self, func: Callable[[Context], Any], **kwargs) -> None:
         """Registers a function to be run on set cron schedule.
         
         Uses APScheduler cron trigger. Details here: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
@@ -66,7 +66,7 @@ class Bot(object):
             - timezone (datetime.tzinfo|str) – time zone to use for the date/time calculations (defaults to scheduler timezone)
             - jitter (int|None) – advance or delay the job execution by jitter seconds at most.
 
-        :param Callable func: The function to be called when the cron trigger is triggered
+        :param Callable[[Context], Any] func: The function to be called when the cron trigger is triggered
         """
         self._cron_jobs.append({
             'func': func,
@@ -75,11 +75,12 @@ class Bot(object):
         })
 
     def handle_callback(self, ctx: Context) -> Any:
-        if ctx.callback.is_from_user():
-            text = ctx.callback.text.lower().strip()
-            for pattern, func in self._handler_functions.items():
-                if re.search(pattern, text):
-                    return func(ctx)
+        if ctx.callback.user_id == self.bot_id:
+            return
+        text = ctx.callback.text.lower().strip()
+        for pattern, func in self._handler_functions.items():
+            if re.search(pattern, text):
+                return func(ctx)
 
     def post_message(self, msg: str, attachments: List[Attachment] = None) -> requests.Response:
         """Posts a bot message to the group with optional attachments.
