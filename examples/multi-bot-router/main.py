@@ -40,9 +40,9 @@ bot2 = Bot('Fake bot 2',
            groupme_api_token='fake-token',
            group_id='fake-group-id')
 
-# add cron task
+# add cron job
 #  - available cron_task arguments: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
-bot1.add_cron_task(cron_task, minute=0, hour='*', timezone='America/Chicago')
+bot1.add_cron_job(cron_task, minute=0, hour='*', timezone='America/Chicago')
 
 # add callback handlers
 bot1.add_callback_handler(r'^\\attachments', attachments)  # message starts with the string '\attachments'
@@ -55,8 +55,8 @@ if __name__ == '__main__':
     router = Router()
 
     # add the bots to the bot router
-    router.add_bot(bot=bot1, callback_route="/bot1")
-    router.add_bot(bot=bot2, callback_route="/bot2")
+    router.add_bot(bot=bot1, callback_path="/bot1")
+    router.add_bot(bot=bot2, callback_path="/bot2")
 
     # run both bots
     router.run(debug=True)
