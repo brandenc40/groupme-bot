@@ -19,6 +19,7 @@ setup(
     license='MIT',
     packages=['groupme_bot'],
     long_description=read('README.md'),
+    long_description_content_type="text/markdown",
     install_requires=[
         'flask',
         'waitress',
