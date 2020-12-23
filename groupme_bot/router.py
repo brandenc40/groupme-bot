@@ -66,7 +66,7 @@ class Router(object):
             self._scheduler.add_job(
                 job['job']['func'],
                 job['job']['trigger'],
-                args=(Context(job['bot'], Callback({})), ),
+                args=(Context(job['bot'], None), ),
                 **job['job']['kwargs'])
 
         # start the cron scheduler and setup a shutdown on exit
