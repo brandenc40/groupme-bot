@@ -1,12 +1,9 @@
-from .callback import Callback
-
-
 class Context:
-    def __init__(self, bot, callback: Callback):
+    def __init__(self, bot, callback):
         """Context provided to all handler functions at time of execution
 
-        :param bot: The bot being called
-        :param Callback callback: The Callback object containing data about the current message
+        :param bot: The Bot being called
+        :param callback: The Callback containing the current incoming message details
         """
         self.bot = bot
         self.callback = callback

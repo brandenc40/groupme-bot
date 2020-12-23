@@ -1,4 +1,12 @@
+import re
+
 from groupme_bot import Router, Bot, Context, ImageAttachment, LocationAttachment
+
+
+# define handler functions
+def cron_task(ctx: Context):
+    print(ctx.bot.bot_name)
+    print("this is a scheduled function at the top of every hour")
 
 
 def mention_all(ctx: Context):
@@ -12,11 +20,16 @@ def attachments(ctx: Context):
     ctx.bot.post_message("this is a message with attachments", [image_attachment, location_attachment])
 
 
-def cron_task(ctx: Context):
-    print(ctx.bot.bot_name)
-    print("this is a scheduled function at the top of every hour")
+def gif_search(ctx: Context):
+    sr = re.search(r'^\\gif([a-zA-Z0-9 -_]+)', ctx.callback.text)
+    if sr:
+        query_string = sr.group(1).strip()
+        # gif_result = search_for_gif(query_string)
+        # ctx.bot.post_message(gif_result)
+        print("implement something like this ^")
 
 
+# build the bot objects
 bot1 = Bot('Fake bot 1',
            bot_id='fake-bot-id',
            groupme_api_token='fake-token',
@@ -27,12 +40,15 @@ bot2 = Bot('Fake bot 2',
            groupme_api_token='fake-token',
            group_id='fake-group-id')
 
-# Available cron_task arguments: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
+# add cron task
+#  - available cron_task arguments: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
 bot1.add_cron_task(cron_task, minute=0, hour='*', timezone='America/Chicago')
+
+# add callback handlers
 bot1.add_callback_handler(r'^\\attachments', attachments)  # message starts with the string '\attachments'
 bot1.add_callback_handler(r'^\\all', mention_all)  # message starts with the string '\all'
 bot2.add_callback_handler(r'^\\all', mention_all)  # message starts with the string '\all'
-
+bot2.add_callback_handler(r'^\\gif', gif_search)  # message starts with the string '\gif'
 
 if __name__ == '__main__':
     # create the bot router
