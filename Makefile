@@ -12,7 +12,7 @@ clean-build:
 	@rm -f -R *.egg-info
 
 .PHONY: release
-release: build upload clean-build
+release: clean-build build upload clean-build
 
 .PHONY: build
 build:
