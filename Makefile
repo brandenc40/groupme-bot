@@ -16,6 +16,7 @@ release: build upload clean-build
 
 .PHONY: build
 build: clean-build
+	@python setup.py sdist
 	@python setup.py bdist_wheel --universal
 
 .PHONY: upload
