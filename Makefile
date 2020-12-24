@@ -12,11 +12,11 @@ clean-build:
 	@rm -f -R *.egg-info
 
 .PHONY: release
-release: clean-build build upload clean-build
+release: build upload clean-build
 
 .PHONY: build
-build:
-	@python setup.py sdist
+build: clean-build
+	@python setup.py bdist_wheel --universal
 
 .PHONY: upload
 upload:
