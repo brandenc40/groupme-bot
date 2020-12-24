@@ -1,6 +1,6 @@
 import atexit
 import logging
-from typing import Any, List
+from typing import List
 
 from waitress import serve
 from flask import request, Flask, jsonify
@@ -15,6 +15,8 @@ class RouteExistsError(Exception):
 
 
 class Router(object):
+    RESERVED_ROUTES = ('/', '/_health')
+
     def __init__(self, flask_app: Flask = None, scheduler: BaseScheduler = None):
         """
         The Router is the primary object used to run the GroupMe Bot. Multiple Bots can be handled in one single
@@ -26,13 +28,27 @@ class Router(object):
         """
         self._app = flask_app if flask_app else Flask(__name__)
         self._scheduler = scheduler if scheduler else BackgroundScheduler(daemon=True)
+
         # build an memory store for bot objects
         self._bots = {}
-        # add app summary to index page
-        self._app.add_url_rule('/', 'index', self._summarize, methods=['GET'])
+
         # define a logger
         self._logger = logging.Logger('Router')
         self._logger.setLevel(logging.INFO)
+
+        # add reserved routes for summary and health check
+        self._app.add_url_rule(
+            '/',
+            'summary',
+            lambda: jsonify({'endpoints': self.endpoints, 'jobs': self.jobs}),
+            methods=['GET']
+        )
+        self._app.add_url_rule(
+            '/_health',
+            '_health',
+            lambda: 'OK',
+            methods=['GET']
+        )
 
     @property
     def bot_store(self) -> dict[str, Bot]:
@@ -97,6 +113,16 @@ class Router(object):
         :param callback_path: The callback path for which the bot can be accesses
         :return:
         """
+        # perform validity checks
+        if callback_path in self.RESERVED_ROUTES:
+            raise RouteExistsError(
+                'Cannot use one of the reserved routes. Reserved routes are: ' + str(self.RESERVED_ROUTES))
+
+        if callback_path in self._bots:
+            raise RouteExistsError(
+                "Callback path `{}` is already in use by a separate bot. Must use a new route for each bot."
+                .format(callback_path))
+
         # store the bot for later access
         self._bots[callback_path] = bot
 
@@ -113,16 +139,16 @@ class Router(object):
             self._scheduler.add_job(
                 job['func'],
                 job['trigger'],
-                args=(Context(bot, Callback({})), ),
+                args=(Context(bot, Callback({})),),
                 **job['kwargs']
             )
 
     def run(self, host: str = "0.0.0.0", port: int = 8000, debug: bool = False) -> None:
         """Run the Router with all bot handlers and scheduled jobs.
 
-        :param str host:
-        :param int port:
-        :param bool debug:
+        :param str host: The host address to run the Router.
+        :param int port: The port to run the Router.
+        :param bool debug: (default: False) Whether or not to run in debug mode.
         """
         # start the cron scheduler and setup a shutdown on exit
         self._scheduler.start()
@@ -134,9 +160,6 @@ class Router(object):
         else:
             self._logger.setLevel(logging.ERROR)
             serve(self._app, host=host, port=port)
-
-    def _summarize(self) -> Any:
-        return jsonify({'endpoints': self.endpoints, 'jobs': self.jobs})
 
     def _handle_callback(self) -> str:
         request_data = request.get_json(silent=True)
