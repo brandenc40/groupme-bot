@@ -15,7 +15,7 @@ pip install groupme-bot
 - Router objects are built to house one or many Bot objects and route incoming traffic to the correct Bot. Each Bot is registered at it's own url path
 to allow for Bots to easily setup callbacks in the GroupMe Developer site.
 - Handler functions all take one argument (context) which is of type Context. The Context contains both a reference to the Bot object being called and the Callback object containing the payload from GroupMe.
-    - The passing of the Bot object in the Context allows for handler function's to be universal and shared by multiple Bots.
+    - The passing of the Bot object in the Context allows for handler functions to be universal and shared by multiple Bots.
 
 ### Multi Bot Example
 
