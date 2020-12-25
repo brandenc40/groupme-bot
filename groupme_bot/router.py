@@ -168,8 +168,8 @@ class Router(object):
         ctx = Context(bot, Callback(callback_dict))
         try:
             bot.handle_callback(ctx)
-            self._logger.info({'status': 'SUCCESS', 'bot': str(bot), 'request': request_data})
+            self._logger.info({'status': 'SUCCESS', 'bot': str(bot), 'request': callback_dict})
             return 'Success'
         except Exception as e:
-            self._logger.error({'status': 'ERROR', 'bot': str(bot), 'request': request_data}, exc_info=e)
+            self._logger.error({'status': 'ERROR', 'bot': str(bot), 'request': callback_dict}, exc_info=e)
             return str(e)

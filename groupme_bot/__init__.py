@@ -8,7 +8,7 @@ from .router import Router
 from .callback import Callback
 from .attachment import ImageAttachment, LocationAttachment, SplitAttachment, EmojiAttachment, MentionsAttachment
 
-__version__ = "0.1.7"
+__version__ = "0.1.9"
 __author__ = "Branden Colen"
 __all__ = [
     "Bot", "Router", "Callback", "Context",
