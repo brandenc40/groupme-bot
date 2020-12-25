@@ -15,7 +15,8 @@ class RouteExistsError(Exception):
 
 
 class Router(object):
-    RESERVED_ROUTES = ('/', '/_health')
+    __slots__ = '_app', '_scheduler', '_bots', '_logger'
+    _reserved_routes = ('/', '/_health')
 
     def __init__(self, flask_app: Flask = None, scheduler: BaseScheduler = None):
         """
@@ -33,7 +34,7 @@ class Router(object):
         self._bots = {}
 
         # define a logger
-        self._logger = logging.Logger('Router')
+        self._logger = logging.Logger(__name__)
         self._logger.setLevel(logging.INFO)
 
         # add reserved routes for summary and health check
@@ -114,9 +115,9 @@ class Router(object):
         :return:
         """
         # perform validity checks
-        if callback_path in self.RESERVED_ROUTES:
+        if callback_path in self._reserved_routes:
             raise RouteExistsError(
-                'Cannot use one of the reserved routes. Reserved routes are: ' + str(self.RESERVED_ROUTES))
+                'Cannot use one of the reserved routes. Reserved routes are: ' + str(self._reserved_routes))
 
         if callback_path in self._bots:
             raise RouteExistsError(
@@ -162,9 +163,9 @@ class Router(object):
             serve(self._app, host=host, port=port)
 
     def _handle_callback(self) -> str:
-        request_data = request.get_json(silent=True)
-        ctx = Context(self._bots[request.path], Callback(request_data))
+        callback_dict = request.get_json(silent=True)
         bot = self._bots[request.path]
+        ctx = Context(bot, Callback(callback_dict))
         try:
             bot.handle_callback(ctx)
             self._logger.info({'status': 'SUCCESS', 'bot': str(bot), 'request': request_data})

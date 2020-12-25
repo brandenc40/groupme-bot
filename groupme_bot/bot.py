@@ -20,8 +20,8 @@ class HandlerPatternExistsError(Exception):
     pass
 
 
-class Context:
-    __slots__ = ['bot', 'callback']
+class Context(object):
+    __slots__ = ('bot', 'callback')
 
     def __init__(self, bot: Bot, callback: Callback):
         """
@@ -36,6 +36,8 @@ class Context:
 
 
 class Bot(object):
+    __slots__ = ('bot_name', 'bot_id', 'api_token', 'group_id', '_handler_functions', '_cron_jobs')
+
     def __init__(self, bot_name: str, bot_id: str, groupme_api_token: str, group_id: str):
         """
         The Bot class represents a single bot that can contains multiple callback handlers and scheduled jobs.

@@ -1,7 +1,9 @@
 from typing import List, Union
 
 
-class Attachment:
+class Attachment(object):
+    __slots__ = '_kwargs'
+
     def __init__(self, **kwargs):
         self._kwargs = kwargs
 
