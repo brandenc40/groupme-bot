@@ -9,7 +9,7 @@ pip install groupme-bot
 
 ## Usage
 
-- Bot objects are define and can include the following handlers
+- A separete Bot object is defined for each bot and can include the following handlers:
     - Regexp Handlers: If a message is sent to the group that matches the given regex, the assicated handler function will be called
     - Cron Jobs: Handler functions that will be run on a set cron cadence
 - Router objects are built to house one or many Bot objects and route incoming traffic to the correct Bot. Each Bot is registered at it's own url path
