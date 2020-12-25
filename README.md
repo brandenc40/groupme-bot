@@ -12,9 +12,9 @@ pip install groupme-bot
 - Bot objects are define and can include the following handlers
     - Regexp Handlers: If a message is sent to the group that matches the given regex, the assicated handler function will be called
     - Cron Jobs: Handler functions that will be run on a set cron cadence
-- Router objects are built to house one or many Bot objects and route incoming traffic to the correct Bot. Each bot is registered at it's own url path
-to allow for bots to easily setup callbacks in the GroupMe Developer site.
-- Handler functions all take one argument (context) which is a Context class. The Context contains both a reference to the Bot object being called and the Callback object containing the payload from GroupMe
+- Router objects are built to house one or many Bot objects and route incoming traffic to the correct Bot. Each Bot is registered at it's own url path
+to allow for Bots to easily setup callbacks in the GroupMe Developer site.
+- Handler functions all take one argument (context) which is of type Context. The Context contains both a reference to the Bot object being called and the Callback object containing the payload from GroupMe.
     - The passing of the Bot object in the Context allows for handler function's to be universal and shared by multiple Bots.
 
 ### Multi Bot Example
