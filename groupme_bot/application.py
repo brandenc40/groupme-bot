@@ -1,7 +1,7 @@
 import atexit
 import logging
 from json.decoder import JSONDecodeError
-from typing import List
+from typing import List, Callable, Dict
 
 from apscheduler.schedulers.background import BackgroundScheduler, BaseScheduler
 from starlette.requests import Request
@@ -85,7 +85,7 @@ class Application(object):
             await _not_found(scope, receive, send)
 
     @property
-    def bot_store(self) -> dict[str, Bot]:
+    def bot_store(self) -> Dict[str, Bot]:
         """
         The current store of routes and the associated bot.
         :return dict[str, Bot]: key=the endpoint route, value=the bot object associated
@@ -109,7 +109,7 @@ class Application(object):
         return self._logger
 
     @property
-    def endpoints(self) -> dict[str, str]:
+    def endpoints(self) -> Dict[str, str]:
         """
         A summary of all endpoints within the Router
         :return dict[str, str]: key=the endpoint path, value=the string repr of the associated Bot

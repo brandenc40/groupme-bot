@@ -21,7 +21,7 @@ class HandlerPatternExistsError(Exception):
 
 
 class Context(object):
-    __slots__ = ('bot', 'callback')
+    __slots__ = ('_bot', '_callback')
 
     def __init__(self, bot: Bot, callback: Callback):
         """
@@ -31,12 +31,20 @@ class Context(object):
         :param Bot bot:
         :param Callback callback:
         """
-        self.bot = bot
-        self.callback = callback
+        self._bot = bot
+        self._callback = callback
+
+    @property
+    def bot(self) -> Bot:
+        return self._bot
+
+    @property
+    def callback(self) -> Callback:
+        return self._callback
 
 
 class Bot(object):
-    __slots__ = ('bot_name', 'bot_id', 'api_token', 'group_id', '_handler_functions', '_cron_jobs')
+    __slots__ = ('bot_name', 'bot_id', 'groupme_api_token', 'group_id', '_handler_functions', '_jobs')
 
     def __init__(self, bot_name: str, bot_id: str, groupme_api_token: str, group_id: str):
         """
@@ -51,11 +59,11 @@ class Bot(object):
         """
         self.bot_name = bot_name
         self.bot_id = bot_id
-        self.api_token = groupme_api_token
+        self.groupme_api_token = groupme_api_token
         self.group_id = group_id
 
         self._handler_functions = {}
-        self._cron_jobs = []
+        self._jobs = []
 
     @property
     def cron_jobs(self) -> List[dict]:
@@ -64,11 +72,24 @@ class Bot(object):
 
         :return List[dict]:
         """
-        return self._cron_jobs
+        return self._jobs
 
     def __str__(self):
         return "%s: %d callback handlers, %d cron jobs" \
-               % (self.bot_name, len(self._handler_functions), len(self._cron_jobs))
+               % (self.bot_name, len(self._handler_functions), len(self._jobs))
+
+    def handle_callback(self, ctx: Context) -> None:
+        """
+        The main method used to handle incoming messages. Callbacks will not be handled if they are messages that came
+        from the bot itself to prevent infinite loops.
+
+        :param Context ctx: The Context of the request containing the Callback and the Bot objects.
+        """
+        if ctx.callback.sender_type == 'user':  # only reply to users
+            text = ctx.callback.text.lower().strip()
+            for pattern, func in self._handler_functions.items():
+                if re.search(pattern, text):
+                    func(ctx)
 
     def add_callback_handler(self, regex_pattern: str, func: Callable[[Context], Any]) -> None:
         """
@@ -104,24 +125,11 @@ class Bot(object):
 
         :param Callable[[Context], Any] func: The function to be called when the cron trigger is triggered
         """
-        self._cron_jobs.append({
+        self._jobs.append({
             'func': func,
             'trigger': 'cron',
             'kwargs': kwargs
         })
-
-    def handle_callback(self, ctx: Context) -> None:
-        """
-        The main method used to handle incoming messages. Callbacks will not be handled if they are messages that came
-        from the bot itself to prevent infinite loops.
-
-        :param Context ctx: The Context of the request containing the Callback and the Bot objects.
-        """
-        if ctx.callback.sender_type == 'user':  # only reply to users
-            text = ctx.callback.text.lower().strip()
-            for pattern, func in self._handler_functions.items():
-                if re.search(pattern, text):
-                    func(ctx)
 
     def post_message(self, msg: str, attachments: List[Attachment] = None) -> requests.Response:
         """
@@ -153,7 +161,7 @@ class Bot(object):
         r = requests.get(image_url)
         r.raise_for_status()
         headers = {
-            'X-Access-Token': self.api_token,
+            'X-Access-Token': self.groupme_api_token,
             'Content-Type': r.headers['Content-type'],
         }
         response = requests.post(GROUP_ME_IMAGES_URL, headers=headers, data=r.content)
@@ -167,7 +175,7 @@ class Bot(object):
 
         :return dict:
         """
-        out = requests.get(GROUPS_URL + self.group_id, params={'token': self.api_token})
+        out = requests.get(GROUPS_URL + self.group_id, params={'token': self.groupme_api_token})
         out.raise_for_status()
         return out.json()['response']
 

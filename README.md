@@ -87,8 +87,8 @@ bot2.add_callback_handler(r'^\\gif', gif_search)  # message starts with the stri
 
 
 # add the bots to the bot router
-app.add_bot(bot=bot1, callback_route="/bot1")
-app.add_bot(bot=bot2, callback_route="/bot2")
+app.add_bot(bot=bot1, callback_path="/bot1")
+app.add_bot(bot=bot2, callback_path="/bot2")
 
 # to run:
 # `uvicorn main:app`
