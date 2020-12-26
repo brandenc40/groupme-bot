@@ -117,12 +117,11 @@ class Bot(object):
 
         :param Context ctx: The Context of the request containing the Callback and the Bot objects.
         """
-        if ctx.callback.user_id == self.bot_id:
-            return
-        text = ctx.callback.text.lower().strip()
-        for pattern, func in self._handler_functions.items():
-            if re.search(pattern, text):
-                func(ctx)
+        if ctx.callback.sender_type == 'user':  # only reply to users
+            text = ctx.callback.text.lower().strip()
+            for pattern, func in self._handler_functions.items():
+                if re.search(pattern, text):
+                    func(ctx)
 
     def post_message(self, msg: str, attachments: List[Attachment] = None) -> requests.Response:
         """
