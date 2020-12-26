@@ -16,6 +16,7 @@ release: build upload clean-build
 
 .PHONY: build
 build: clean-build
+	@pip install twine wheel
 	@python setup.py sdist
 	@python setup.py bdist_wheel --universal
 
