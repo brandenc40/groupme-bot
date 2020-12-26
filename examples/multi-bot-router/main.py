@@ -1,6 +1,6 @@
 import re
 
-from groupme_bot import Router, Bot, Context, ImageAttachment, LocationAttachment
+from groupme_bot import Application, Bot, Context, ImageAttachment, LocationAttachment
 
 
 # define handler functions
@@ -42,7 +42,7 @@ bot2 = Bot('Fake bot 2',
 
 # add cron job
 #  - available cron_task arguments: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
-bot1.add_cron_job(cron_task, minute=0, hour='*', timezone='America/Chicago')
+bot1.add_cron_job(cron_task, minute=12, hour='*', timezone='America/Chicago')
 
 # add callback handlers
 bot1.add_callback_handler(r'^\\attachments', attachments)  # message starts with the string '\attachments'
@@ -50,13 +50,9 @@ bot1.add_callback_handler(r'^\\all', mention_all)  # message starts with the str
 bot2.add_callback_handler(r'^\\all', mention_all)  # message starts with the string '\all'
 bot2.add_callback_handler(r'^\\gif', gif_search)  # message starts with the string '\gif'
 
-if __name__ == '__main__':
-    # create the bot router
-    router = Router()
+# create the Application
+app = Application()
 
-    # add the bots to the bot router
-    router.add_bot(bot=bot1, callback_path="/bot1")
-    router.add_bot(bot=bot2, callback_path="/bot2")
-
-    # run both bots
-    router.run(debug=True)
+# add the bots to the bot router
+app.add_bot(bot=bot1, callback_path="/bot1")
+app.add_bot(bot=bot2, callback_path="/bot2")

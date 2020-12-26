@@ -1,34 +1,40 @@
 import atexit
 import logging
+from json.decoder import JSONDecodeError
 from typing import List
 
-from waitress import serve
-from flask import request, Flask, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler, BaseScheduler
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse, JSONResponse
+from starlette.types import Scope, Receive, Send
 
 from .bot import Bot, Context
 from .callback import Callback
+
+_not_allowed = PlainTextResponse('405 Method Not Allowed', status_code=405)
+_not_found = PlainTextResponse('404 Not Found', status_code=404)
 
 
 class RouteExistsError(Exception):
     pass
 
 
-class Router(object):
-    __slots__ = '_app', '_scheduler', '_bots', '_logger'
+class Application(object):
+    __slots__ = ('_scheduler', '_bots', '_logger')
     _reserved_routes = ('/', '/_health')
 
-    def __init__(self, flask_app: Flask = None, scheduler: BaseScheduler = None):
+    def __init__(self, scheduler: BaseScheduler = None):
         """
         The Router is the primary object used to run the GroupMe Bot. Multiple Bots can be handled in one single
         router object. Each bot is assigned an endpoint path and requests to that endpoint will be handled by the
         associated bot.
 
-        :param Flask flask_app: (optional) Default to Flask(__name__)
         :param BaseScheduler scheduler: (optional) Default to BackgroundScheduler(daemon=True)
         """
-        self._app = flask_app if flask_app else Flask(__name__)
+        # start the cron scheduler and setup a shutdown on exit
         self._scheduler = scheduler if scheduler else BackgroundScheduler(daemon=True)
+        self._scheduler.start()
+        atexit.register(lambda: self._scheduler.shutdown(wait=False))
 
         # build an memory store for bot objects
         self._bots = {}
@@ -37,19 +43,46 @@ class Router(object):
         self._logger = logging.Logger(__name__)
         self._logger.setLevel(logging.INFO)
 
-        # add reserved routes for summary and health check
-        self._app.add_url_rule(
-            '/',
-            'summary',
-            lambda: jsonify({'endpoints': self.endpoints, 'jobs': self.jobs}),
-            methods=['GET']
-        )
-        self._app.add_url_rule(
-            '/_health',
-            '_health',
-            lambda: 'OK',
-            methods=['GET']
-        )
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        req = Request(scope, receive, send)
+        path = req.url.path
+
+        if path in self._bots:
+            if req.method != 'POST':
+                await _not_allowed(scope, receive, send)
+            else:
+                try:
+                    callback_dict = await req.json()
+                except JSONDecodeError as e:
+                    response = PlainTextResponse(
+                        "400 Bad Request. Unable to parse JSON. Error: " + str(e), status_code=400)
+                    await response(scope, receive, send)
+                else:
+                    bot = self._bots[path]
+                    try:
+                        bot.handle_callback(Context(bot, Callback(callback_dict)))
+                        self._logger.info({'status': 'SUCCESS', 'bot': str(bot), 'request': callback_dict})
+                        response = PlainTextResponse('Success')
+                    except Exception as e:
+                        self._logger.error({'status': 'ERROR', 'bot': str(bot), 'request': callback_dict}, exc_info=e)
+                        response = PlainTextResponse(str(e))
+                    await response(scope, receive, send)
+
+        elif path == '/':
+            if req.method != 'GET':
+                await _not_allowed(scope, receive, send)
+            else:
+                response = JSONResponse({'endpoints': self.endpoints, 'jobs': self.jobs})
+                await response(scope, receive, send)
+
+        elif path == '/_health':
+            if req.method != 'GET':
+                await _not_allowed(scope, receive, send)
+            else:
+                response = PlainTextResponse('OK')
+                await response(scope, receive, send)
+        else:
+            await _not_found(scope, receive, send)
 
     @property
     def bot_store(self) -> dict[str, Bot]:
@@ -58,14 +91,6 @@ class Router(object):
         :return dict[str, Bot]: key=the endpoint route, value=the bot object associated
         """
         return self._bots
-
-    @property
-    def flask_app(self) -> Flask:
-        """
-        The Flask app objects being used for the router.
-        :return Flask:
-        """
-        return self._app
 
     @property
     def scheduler(self) -> BaseScheduler:
@@ -122,18 +147,10 @@ class Router(object):
         if callback_path in self._bots:
             raise RouteExistsError(
                 "Callback path `{}` is already in use by a separate bot. Must use a new route for each bot."
-                .format(callback_path))
+                    .format(callback_path))
 
         # store the bot for later access
         self._bots[callback_path] = bot
-
-        # add the flask route
-        self._app.add_url_rule(
-            callback_path,
-            callback_path.replace("/", "") + '-callback-handler',
-            self._handle_callback,
-            methods=['POST']
-        )
 
         # add scheduler jobs
         for job in bot.cron_jobs:
@@ -143,33 +160,3 @@ class Router(object):
                 args=(Context(bot, Callback({})),),
                 **job['kwargs']
             )
-
-    def run(self, host: str = "0.0.0.0", port: int = 8000, debug: bool = False) -> None:
-        """Run the Router with all bot handlers and scheduled jobs.
-
-        :param str host: The host address to run the Router.
-        :param int port: The port to run the Router.
-        :param bool debug: (default: False) Whether or not to run in debug mode.
-        """
-        # start the cron scheduler and setup a shutdown on exit
-        self._scheduler.start()
-        atexit.register(lambda: self._scheduler.shutdown(wait=False))
-
-        # run the flask app
-        if debug:
-            self._app.run(host=host, port=port, debug=debug)
-        else:
-            self._logger.setLevel(logging.ERROR)
-            serve(self._app, host=host, port=port)
-
-    def _handle_callback(self) -> str:
-        callback_dict = request.get_json(silent=True)
-        bot = self._bots[request.path]
-        ctx = Context(bot, Callback(callback_dict))
-        try:
-            bot.handle_callback(ctx)
-            self._logger.info({'status': 'SUCCESS', 'bot': str(bot), 'request': callback_dict})
-            return 'Success'
-        except Exception as e:
-            self._logger.error({'status': 'ERROR', 'bot': str(bot), 'request': callback_dict}, exc_info=e)
-            return str(e)

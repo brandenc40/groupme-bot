@@ -22,3 +22,8 @@ build: clean-build
 .PHONY: upload
 upload:
 	@twine upload dist/*
+
+.PHONY: run-example
+run-example:
+	@python setup.py install
+	@uvicorn examples.multi-bot-router.main:app --reload

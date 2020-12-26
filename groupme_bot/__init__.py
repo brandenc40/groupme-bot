@@ -3,15 +3,15 @@ groupme-bot
 
 A simple bot builder for GroupMe
 """
-from .bot import Bot, Context
-from .router import Router
-from .callback import Callback
+from .application import Application
 from .attachment import ImageAttachment, LocationAttachment, SplitAttachment, EmojiAttachment, MentionsAttachment
+from .bot import Bot, Context
+from .callback import Callback
 
 __version__ = "0.1.10"
 __author__ = "Branden Colen"
 __all__ = [
-    "Bot", "Router", "Callback", "Context",
+    "Bot", "Application", "Callback", "Context",
     "ImageAttachment", "LocationAttachment",
     "SplitAttachment", "EmojiAttachment",
     "MentionsAttachment"
