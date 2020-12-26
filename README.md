@@ -19,7 +19,7 @@ to allow for Bots to easily setup callbacks in the GroupMe Developer site.
     
 ### Running Your App
 
-Start your app with uvicorn. 
+Start your app with [Uvicorn](http://www.uvicorn.org/deployment/). For more deployment details, see http://www.uvicorn.org/deployment/.
 
 Example running an `app` object in `main.py`.
 
