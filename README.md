@@ -9,11 +9,11 @@ pip install groupme-bot
 
 ## Usage
 
-- A separete Bot object is defined for each bot and can include the following handlers:
-    - Regexp Handlers: If a message is sent to the group that matches the given regex, the associated handler function will be called
-    - Cron Jobs: Handler functions that will be run on a set cron cadence
 - An Application object is created to house one or many Bot objects and route incoming traffic to the correct Bot. Each Bot is registered at it's own url path
 to allow for Bots to easily setup callbacks in the GroupMe Developer site.
+- A separate Bot object is defined for each bot and can include the following handlers:
+    - Regexp Handlers: If a message is sent to the group that matches the given regex, the associated handler function will be called
+    - Cron Jobs: Handler functions that will be run on a set cron cadence
 - Handler functions all take one argument (context) which is of type Context. The Context contains both a reference to the Bot object being called and the Callback object containing the payload from GroupMe.
     - The passing of the Bot object in the Context allows for handler functions to be universal and shared by multiple Bots.
     
@@ -33,6 +33,11 @@ uvicorn main:app
 import re 
 
 from groupme_bot import Application, Bot, Context, ImageAttachment, LocationAttachment
+
+
+# create the bot Application
+app = Application()
+
 
 # define handler functions
 def cron_task(ctx: Context):
@@ -78,9 +83,6 @@ bot1.add_callback_handler(r'^\\all', mention_all)  # message starts with the str
 bot2.add_callback_handler(r'^\\all', mention_all)  # message starts with the string '\all'
 bot2.add_callback_handler(r'^\\gif', gif_search)  # message starts with the string '\gif'
 
-
-# create the bot Application
-app = Application()
 
 # add the bots to the bot router
 app.add_bot(bot=bot1, callback_route="/bot1")
