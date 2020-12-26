@@ -8,7 +8,7 @@ from .attachment import ImageAttachment, LocationAttachment, SplitAttachment, Em
 from .bot import Bot, Context
 from .callback import Callback
 
-__version__ = "0.1.12"
+__version__ = "0.2.0"
 __author__ = "Branden Colen"
 __all__ = [
     "Bot", "Application", "Callback", "Context",
