@@ -1,7 +1,7 @@
 import atexit
 import logging
 from json.decoder import JSONDecodeError
-from typing import List, Callable, Dict
+from typing import List, Dict
 
 from apscheduler.schedulers.background import BackgroundScheduler, BaseScheduler
 from starlette.requests import Request
@@ -10,6 +10,9 @@ from starlette.types import Scope, Receive, Send
 
 from .bot import Bot, Context
 from .callback import Callback
+
+GET = 'GET'
+POST = 'POST'
 
 _not_allowed = PlainTextResponse('405 Method Not Allowed', status_code=405)
 _not_found = PlainTextResponse('404 Not Found', status_code=404)
@@ -28,8 +31,8 @@ class Application(object):
         The Router is the primary object used to run the GroupMe Bot. Multiple Bots can be handled in one single
         router object. Each bot is assigned an endpoint path and requests to that endpoint will be handled by the
         associated bot.
-
-        :param BaseScheduler scheduler: (optional) Default to BackgroundScheduler(daemon=True)
+        :param BaseScheduler scheduler: (optional) Defaults to
+            apscheduler.schedulers.background.BackgroundScheduler(daemon=True)
         """
         # start the cron scheduler and setup a shutdown on exit
         self._scheduler = scheduler if scheduler else BackgroundScheduler(daemon=True)
@@ -41,14 +44,13 @@ class Application(object):
 
         # define a logger
         self._logger = logging.Logger(__name__)
-        self._logger.setLevel(logging.INFO)
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         req = Request(scope, receive, send)
         path = req.url.path
 
         if path in self._bots:
-            if req.method != 'POST':
+            if req.method != POST:
                 await _not_allowed(scope, receive, send)
             else:
                 try:
@@ -65,18 +67,18 @@ class Application(object):
                         response = PlainTextResponse('Success')
                     except Exception as e:
                         self._logger.error({'status': 'ERROR', 'bot': str(bot), 'request': callback_dict}, exc_info=e)
-                        response = PlainTextResponse(str(e))
+                        response = PlainTextResponse(str(e), status_code=500)
                     await response(scope, receive, send)
 
         elif path == '/':
-            if req.method != 'GET':
+            if req.method != GET:
                 await _not_allowed(scope, receive, send)
             else:
                 response = JSONResponse({'endpoints': self.endpoints, 'jobs': self.jobs})
                 await response(scope, receive, send)
 
         elif path == '/_health':
-            if req.method != 'GET':
+            if req.method != GET:
                 await _not_allowed(scope, receive, send)
             else:
                 response = PlainTextResponse('OK')
@@ -133,21 +135,20 @@ class Application(object):
         return job_summary
 
     def add_bot(self, bot: Bot, callback_path: str) -> None:
-        """Add a new bot to be run by the Router
-
+        """
+        Add a new bot to be run by the Router
         :param bot: The bot to be run
         :param callback_path: The callback path for which the bot can be accesses
         :return:
         """
         # perform validity checks
         if callback_path in self._reserved_routes:
-            raise RouteExistsError(
-                'Cannot use one of the reserved routes. Reserved routes are: ' + str(self._reserved_routes))
+            raise RouteExistsError(f'Cannot use one of the reserved routes. Reserved '
+                                   f'routes are: {str(self._reserved_routes)}')
 
         if callback_path in self._bots:
-            raise RouteExistsError(
-                "Callback path `{}` is already in use by a separate bot. Must use a new route for each bot."
-                    .format(callback_path))
+            raise RouteExistsError(f"Callback path `{callback_path}` is already in use by a separate bot. "
+                                   f"Must use a new route for each bot.")
 
         # store the bot for later access
         self._bots[callback_path] = bot

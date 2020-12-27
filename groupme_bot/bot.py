@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Any, List, Callable
+from typing import Any, List, Callable, Optional
 
 import requests
 
@@ -14,6 +14,8 @@ BOT_INDEX_URL = BASE_URL + '/bots'
 BOT_POST_URL = BASE_URL + '/bots/post'
 GROUPS_URL = BASE_URL + '/groups/'
 GROUP_ME_IMAGES_URL = 'https://image.groupme.com/pictures'
+
+CRON_TRIGGER = 'cron'
 
 
 class HandlerPatternExistsError(Exception):
@@ -27,7 +29,6 @@ class Context(object):
         """
         Context provided to every handler/scheduled function run by the bot. This provides a clean object containing
         bot the bot in use and the Callback that was sent.
-
         :param Bot bot:
         :param Callback callback:
         """
@@ -50,7 +51,6 @@ class Bot(object):
         """
         The Bot class represents a single bot that can contains multiple callback handlers and scheduled jobs.
         Bots are run using the Router class.
-
         :param bot_name: A unique name for this bot to be known as within this code. Does not impact the name
             displayed in the GroupMe app.
         :param bot_id: The Bot ID provided by GroupMe.
@@ -69,20 +69,17 @@ class Bot(object):
     def cron_jobs(self) -> List[dict]:
         """
         All list of cron jobs associated with this bot.
-
         :return List[dict]:
         """
         return self._jobs
 
     def __str__(self):
-        return "%s: %d callback handlers, %d cron jobs" \
-               % (self.bot_name, len(self._handler_functions), len(self._jobs))
+        return f"{self.bot_name}: {len(self._handler_functions)} callback handlers, {len(self._jobs)} cron jobs"
 
     def handle_callback(self, ctx: Context) -> None:
         """
         The main method used to handle incoming messages. Callbacks will not be handled if they are messages that came
         from the bot itself to prevent infinite loops.
-
         :param Context ctx: The Context of the request containing the Callback and the Bot objects.
         """
         if ctx.callback.sender_type == 'user':  # only reply to users
@@ -95,20 +92,18 @@ class Bot(object):
         """
         Registers a regex pattern as to a bot handler function. If the regex pattern
         is found in a message from a GroupMe user, the function will be called.
-
         :param regex_pattern: The pattern to search for in the message text
         :param Callable[[Context], Any] func: The function to be called when the pattern is matched
         """
         if regex_pattern in self._handler_functions:
-            raise HandlerPatternExistsError("The pattern `%s` is already registered to a handler" % regex_pattern)
+            raise HandlerPatternExistsError(f"The pattern `{regex_pattern}` is already registered to a handler")
         self._handler_functions[regex_pattern] = func
 
     def add_cron_job(self, func: Callable[[Context], Any], **kwargs) -> None:
         """
         Registers a function to be run on set cron schedule.
-        
-        Uses APScheduler cron trigger. Details here: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
-        
+        Uses APScheduler cron trigger. Details here:
+            https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
         Available arguments:
             - year (int|str) – 4-digit year
             - month (int|str) – month (1-12)
@@ -120,21 +115,20 @@ class Bot(object):
             - second (int|str) – second (0-59)
             - start_date (datetime|str) – earliest possible date/time to trigger on (inclusive)
             - end_date (datetime|str) – latest possible date/time to trigger on (inclusive)
-            - timezone (datetime.tzinfo|str) – time zone to use for the date/time calculations (defaults to scheduler timezone)
+            - timezone (datetime.tzinfo|str) – time zone to use for the date/time calculations
+                (defaults to scheduler timezone)
             - jitter (int|None) – advance or delay the job execution by jitter seconds at most.
-
         :param Callable[[Context], Any] func: The function to be called when the cron trigger is triggered
         """
         self._jobs.append({
             'func': func,
-            'trigger': 'cron',
+            'trigger': CRON_TRIGGER,
             'kwargs': kwargs
         })
 
-    def post_message(self, msg: str, attachments: List[Attachment] = None) -> requests.Response:
+    def post_message(self, msg: str, attachments: Optional[List[Attachment]] = None) -> requests.Response:
         """
         Posts a bot message to the group with optional attachments.
-
         :param str msg: The message to be sent
         :param List[Attachment] attachments: (optional) Attachments to send in the message
         :return requests.Response: The POST request response object
@@ -153,31 +147,29 @@ class Bot(object):
         return response
 
     def image_url_to_groupme_image_url(self, image_url: str) -> str:
-        """Convert a normal image URL to a GroupMe image to allow for usage as an attachment
-
+        """
+        Convert a normal image URL to a GroupMe image to allow for usage as an attachment
         :param str image_url: The URL for any image
         :return str: The URL for the converted GroupMe image
         """
-        r = requests.get(image_url)
-        r.raise_for_status()
+        res = requests.get(image_url)
+        res.raise_for_status()
         headers = {
             'X-Access-Token': self.groupme_api_token,
-            'Content-Type': r.headers['Content-type'],
+            'Content-Type': res.headers['Content-type'],
         }
-        response = requests.post(GROUP_ME_IMAGES_URL, headers=headers, data=r.content)
-        response.raise_for_status()
-        out = response.json()
-        return out['payload']['picture_url']
+        res = requests.post(GROUP_ME_IMAGES_URL, headers=headers, data=res.content)
+        res.raise_for_status()
+        return res.json()['payload']['picture_url']
 
     def get_group_summary(self) -> dict:
         """
         Get a summary of the group from the GroupMe API
-
         :return dict:
         """
-        out = requests.get(GROUPS_URL + self.group_id, params={'token': self.groupme_api_token})
-        out.raise_for_status()
-        return out.json()['response']
+        res = requests.get(GROUPS_URL + self.group_id, params={'token': self.groupme_api_token})
+        res.raise_for_status()
+        return res.json()['response']
 
     def mention_all(self) -> None:
         """

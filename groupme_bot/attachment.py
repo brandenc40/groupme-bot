@@ -1,16 +1,21 @@
-from typing import List, Union
+from typing import List, Union, Dict
 
 
 class Attachment(object):
     __slots__ = '_kwargs'
+    _list_keys = ('charmap', 'loci', 'user_ids')
 
     def __init__(self, **kwargs):
         self._kwargs = kwargs
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Union[str, List]]:
+        """
+        Converts the class instance to a dictionary with properly type casted values
+        :return: A dict containing the properly type casted values
+        """
         out = {}
         for key, value in self._kwargs.items():
-            if key in ('charmap', 'loci', 'user_ids'):
+            if key in self._list_keys:
                 out[key] = value if value else []
             else:
                 out[key] = str(value)

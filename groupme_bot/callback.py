@@ -8,8 +8,7 @@ class Callback(object):
         """
         The callback provided by GroupMe. When any message is sent to the group, GroupMe sends a callback to the
         bots endpoint. This object is generated from the callback JSON to allow for easy use by the bot handlers.
-
-        :param dict callback_dict: A dict with the callback json extracted from the flask response.
+        :param dict callback_dict: A dict of the JSON body extracted from the GroupMe callback POST request
         """
         self._callback_dict = callback_dict
 
