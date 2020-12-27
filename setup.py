@@ -26,10 +26,9 @@ setup(
         'starlette>=0.14',
         'uvicorn>=0.13'
     ],
+    python_requires='>=3.6',  # for use of f strings
     classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
+        'Development Status :: 4 - Beta',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
