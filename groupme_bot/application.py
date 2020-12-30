@@ -6,8 +6,7 @@ from starlette.requests import Request
 from starlette.responses import PlainTextResponse, JSONResponse
 from starlette.types import Scope, Receive, Send, ASGIApp
 
-from .bot import Bot, Context
-from .callback import Callback
+from .bot import Bot
 
 GET = 'GET'
 POST = 'POST'

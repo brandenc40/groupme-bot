@@ -136,7 +136,7 @@ class Bot(GroupMe):
         self._jobs.append({
             'func': func,
             'trigger': 'cron',
-            'args': (Context(self, Callback({})), ),
+            'args': (Context(self, Callback({})),),
             'kwargs': kwargs
         })
 
