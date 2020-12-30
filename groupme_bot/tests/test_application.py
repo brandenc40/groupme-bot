@@ -18,5 +18,5 @@ class TestRouter(TestCase):
             app.add_bot(bot, '/')
 
         app.add_bot(bot, "/bot")
-        self.assertEqual(list(app.bot_store.keys()), ['/bot'])
-        self.assertIsInstance(app.bot_store['/bot'], Bot)
+        self.assertEqual(list(app.routes.keys()), ['/', '/_health', '/bot'])
+        self.assertIsInstance(app.routes['/bot']['POST'], Bot)
