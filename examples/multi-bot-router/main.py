@@ -10,14 +10,16 @@ app = Application()
 # define handler functions
 async def cron_task(ctx: Context):
     t = time.time()
-    print(ctx.bot.bot_name + str(t))
+    print('Cron triggered for ' + str(ctx.bot))
 
 
 def mention_all(ctx: Context):
+    print('mention_all for ' + str(ctx.bot))
     ctx.bot.mention_all()
 
 
 def attachments(ctx: Context):
+    print('attachments for ' + str(ctx.bot))
     img_url = ctx.bot.image_url_to_groupme_image_url(image_url="https://images.indianexpress.com/2020/12/Doodle.jpg")
     image_attachment = ImageAttachment(image_url=img_url)
     location_attachment = LocationAttachment(name="A Location", lat=100.000, lng=46.000)
@@ -25,6 +27,7 @@ def attachments(ctx: Context):
 
 
 def gif_search(ctx: Context):
+    print('gif_search for ' + str(ctx.bot))
     sr = re.search(r'^\\gif([a-zA-Z0-9 -_]+)', ctx.callback.text)
     if sr:
         query_string = sr.group(1).strip()

@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 import json
+import logging
 import re
+from json.decoder import JSONDecodeError
 from typing import Any, List, Callable, Optional
 
 import requests
+from starlette.requests import Request
+from starlette.responses import PlainTextResponse
+from starlette.types import Scope, Receive, Send
 
 from .attachment import Attachment, MentionsAttachment
 from .callback import Callback
@@ -38,7 +43,7 @@ class Context(object):
 
 
 class Bot(GroupMe):
-    __slots__ = ('bot_name', 'bot_id', 'groupme_api_token', 'group_id', '_handler_functions', '_jobs')
+    __slots__ = ('bot_name', 'bot_id', 'groupme_api_token', 'group_id', '_handler_functions', '_jobs', '_logger')
 
     def __init__(self, bot_name: str, bot_id: str, groupme_api_token: str, group_id: str):
         """
@@ -58,6 +63,7 @@ class Bot(GroupMe):
 
         self._handler_functions = {}
         self._jobs = []
+        self._logger = logging.getLogger(bot_name)
 
     @property
     def cron_jobs(self) -> List[dict]:
@@ -68,19 +74,32 @@ class Bot(GroupMe):
         return self._jobs
 
     def __str__(self):
-        return f"{self.bot_name}: {len(self._handler_functions)} callback handlers, {len(self._jobs)} cron jobs"
+        return f"{self.bot_name}: {len(self._handler_functions)} callback handlers, " \
+               f"{len(self._jobs)} cron jobs at {hex(id(self))}"
 
-    def handle_callback(self, ctx: Context) -> None:
-        """
-        The main method used to handle incoming messages. Callbacks will not be handled if they are messages that came
-        from the bot itself to prevent infinite loops.
-        :param Context ctx: The Context of the request containing the Callback and the Bot objects.
-        """
-        if ctx.callback.sender_type == 'user':  # only reply to users
-            text = ctx.callback.text.lower().strip()
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        req = Request(scope, receive, send)
+        try:
+            callback_dict = await req.json()
+        except JSONDecodeError as e:
+            response = PlainTextResponse(
+                "400 Bad Request. Unable to parse JSON. Error: " + str(e), status_code=400)
+            await response(scope, receive, send)
+            return
+        callback = Callback(callback_dict)
+        if callback.sender_type == 'user':  # only reply to users
+            text = callback.text.lower().strip()
             for pattern, func in self._handler_functions.items():
                 if re.search(pattern, text):
-                    func(ctx)
+                    try:
+                        func(Context(self, callback))
+                        self._logger.info({'status': 'SUCCESS', 'bot': str(self), 'request': callback_dict})
+                        response = PlainTextResponse('Success')
+                    except Exception as e:
+                        self._logger.error({'status': 'ERROR', 'bot': str(self), 'request': callback_dict},
+                                           exc_info=e)
+                        response = PlainTextResponse(str(e), status_code=500)
+                    await response(scope, receive, send)
 
     def add_callback_handler(self, regex_pattern: str, func: Callable[[Context], Any]) -> None:
         """
@@ -117,6 +136,7 @@ class Bot(GroupMe):
         self._jobs.append({
             'func': func,
             'trigger': 'cron',
+            'args': (Context(self, Callback({})), ),
             'kwargs': kwargs
         })
 
