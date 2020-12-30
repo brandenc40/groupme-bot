@@ -8,14 +8,7 @@ import requests
 
 from .attachment import Attachment, MentionsAttachment
 from .callback import Callback
-
-BASE_URL = 'https://api.groupme.com/v3'
-BOT_INDEX_URL = BASE_URL + '/bots'
-BOT_POST_URL = BASE_URL + '/bots/post'
-GROUPS_URL = BASE_URL + '/groups/'
-GROUP_ME_IMAGES_URL = 'https://image.groupme.com/pictures'
-
-CRON_TRIGGER = 'cron'
+from .groupme import GroupMe
 
 
 class HandlerPatternExistsError(Exception):
@@ -44,7 +37,7 @@ class Context(object):
         return self._callback
 
 
-class Bot(object):
+class Bot(GroupMe):
     __slots__ = ('bot_name', 'bot_id', 'groupme_api_token', 'group_id', '_handler_functions', '_jobs')
 
     def __init__(self, bot_name: str, bot_id: str, groupme_api_token: str, group_id: str):
@@ -57,6 +50,7 @@ class Bot(object):
         :param groupme_api_token: The GroupMe API token for access to group details.
         :param group_id: The id of the GroupMe group in which the bot exists.
         """
+        super().__init__(groupme_api_token)
         self.bot_name = bot_name
         self.bot_id = bot_id
         self.groupme_api_token = groupme_api_token
@@ -122,7 +116,7 @@ class Bot(object):
         """
         self._jobs.append({
             'func': func,
-            'trigger': CRON_TRIGGER,
+            'trigger': 'cron',
             'kwargs': kwargs
         })
 
@@ -130,7 +124,7 @@ class Bot(object):
         """
         Posts a bot message to the group with optional attachments.
         :param str msg: The message to be sent
-        :param List[Attachment] attachments: (optional) Attachments to send in the message
+        :param Optional[List[Attachment]] attachments: Attachments to send in the message
         :return requests.Response: The POST request response object
         """
         if attachments:
@@ -142,34 +136,13 @@ class Bot(object):
             "text": msg,
             "attachments": attachments
         }
-        response = requests.post(BOT_POST_URL, data=json.dumps(data), headers={'Content-Type': 'application/json'})
+        response = requests.post(
+            'https://api.groupme.com/v3/bots/post',
+            data=json.dumps(data),
+            headers={'Content-Type': 'application/json'}
+        )
         response.raise_for_status()
         return response
-
-    def image_url_to_groupme_image_url(self, image_url: str) -> str:
-        """
-        Convert a normal image URL to a GroupMe image to allow for usage as an attachment
-        :param str image_url: The URL for any image
-        :return str: The URL for the converted GroupMe image
-        """
-        res = requests.get(image_url)
-        res.raise_for_status()
-        headers = {
-            'X-Access-Token': self.groupme_api_token,
-            'Content-Type': res.headers['Content-type'],
-        }
-        res = requests.post(GROUP_ME_IMAGES_URL, headers=headers, data=res.content)
-        res.raise_for_status()
-        return res.json()['payload']['picture_url']
-
-    def get_group_summary(self) -> dict:
-        """
-        Get a summary of the group from the GroupMe API
-        :return dict:
-        """
-        res = requests.get(GROUPS_URL + self.group_id, params={'token': self.groupme_api_token})
-        res.raise_for_status()
-        return res.json()['response']
 
     def mention_all(self) -> None:
         """
@@ -178,7 +151,8 @@ class Bot(object):
         text = ''
         user_ids = []
         loci = []
-        for member in self.get_group_summary()['members']:
+        group = self.get_group(self.group_id)
+        for member in group['members']:
             user_ids.append(member['user_id'])
             loci.append([len(text), len(member['nickname']) + 1])
             text += '@{} '.format(member['nickname'])
