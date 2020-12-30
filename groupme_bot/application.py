@@ -31,11 +31,14 @@ class Application(object):
         """
         # start the cron scheduler and setup a shutdown on exit
         self._scheduler: AsyncIOScheduler = AsyncIOScheduler()
-        self._scheduler.start()
         atexit.register(lambda: self._scheduler.shutdown(wait=False))
 
         async def _summary(scope: Scope, receive: Receive, send: Send):
-            response = JSONResponse({'endpoints': self.endpoints, 'jobs': self.jobs})
+            response = JSONResponse({
+                'endpoints': self.endpoints,
+                'jobs': self.jobs,
+                'scheduler_running': self._scheduler.running
+            })
             await response(scope, receive, send)
 
         async def _health(scope: Scope, receive: Receive, send: Send):
@@ -130,3 +133,5 @@ class Application(object):
                 args=job['args'],
                 **job['kwargs']
             )
+            if not self._scheduler.running:
+                self._scheduler.start()

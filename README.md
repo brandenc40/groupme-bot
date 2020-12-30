@@ -93,5 +93,5 @@ app.add_bot(bot=bot1, callback_path="/bot1")
 app.add_bot(bot=bot2, callback_path="/bot2")
 
 # to run:
-# `uvicorn main:app`
+# `uvicorn main:app --workers=1`
 ```
