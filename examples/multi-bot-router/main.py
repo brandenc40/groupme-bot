@@ -1,4 +1,5 @@
 import re
+import time
 
 from groupme_bot import Application, Bot, Context, ImageAttachment, LocationAttachment
 
@@ -7,9 +8,9 @@ app = Application()
 
 
 # define handler functions
-def cron_task(ctx: Context):
-    print(ctx.bot.bot_name)
-    print("this is a scheduled function at the top of every hour")
+async def cron_task(ctx: Context):
+    t = time.time()
+    print(ctx.bot.bot_name + str(t))
 
 
 def mention_all(ctx: Context):
@@ -45,7 +46,7 @@ bot2 = Bot('Fake bot 2',
 
 # add cron job
 #  - available cron_task arguments: https://apscheduler.readthedocs.io/en/stable/modules/triggers/cron.html
-bot1.add_cron_job(cron_task, minute=0, hour='*', timezone='America/Chicago')
+bot1.add_cron_job(cron_task, minute='*', hour='*', timezone='America/Chicago')
 
 # add callback handlers
 bot1.add_callback_handler(r'^\\attachments', attachments)  # message starts with the string '\attachments'
