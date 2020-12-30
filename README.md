@@ -23,8 +23,10 @@ Start your app with [Uvicorn](http://www.uvicorn.org/deployment/). For more depl
 
 Example running an `app` object in `main.py`.
 
+**Must use `--workers=1` to prevents scheduled jobs from running multiple times. Working on a fix for this.**
+
 ```
-uvicorn main:app
+uvicorn main:app --workers=1
 ```
 
 ### Multi Bot Example

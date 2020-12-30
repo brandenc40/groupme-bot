@@ -3,7 +3,7 @@ import logging
 from json.decoder import JSONDecodeError
 from typing import List, Dict
 
-from apscheduler.schedulers.background import BackgroundScheduler, BaseScheduler
+from apscheduler.schedulers.asyncio import AsyncIOScheduler, BaseScheduler
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse, JSONResponse
 from starlette.types import Scope, Receive, Send
@@ -26,16 +26,14 @@ class Application(object):
     __slots__ = ('_scheduler', '_bots', '_logger')
     _reserved_routes = ('/', '/_health')
 
-    def __init__(self, scheduler: BaseScheduler = None):
+    def __init__(self):
         """
         The Router is the primary object used to run the GroupMe Bot. Multiple Bots can be handled in one single
         router object. Each bot is assigned an endpoint path and requests to that endpoint will be handled by the
         associated bot.
-        :param BaseScheduler scheduler: (optional) Defaults to
-            apscheduler.schedulers.background.BackgroundScheduler(daemon=True)
         """
         # start the cron scheduler and setup a shutdown on exit
-        self._scheduler = scheduler if scheduler else BackgroundScheduler(daemon=True)
+        self._scheduler = AsyncIOScheduler()
         self._scheduler.start()
         atexit.register(lambda: self._scheduler.shutdown(wait=False))
 
