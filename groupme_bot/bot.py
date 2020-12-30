@@ -16,6 +16,8 @@ from .callback import Callback
 from .groupme import GroupMe
 
 
+_success_response = PlainTextResponse('Success')
+
 class HandlerPatternExistsError(Exception):
     pass
 
@@ -87,19 +89,25 @@ class Bot(GroupMe):
             await response(scope, receive, send)
             return
         callback = Callback(callback_dict)
-        if callback.sender_type == 'user':  # only reply to users
-            text = callback.text.lower().strip()
-            for pattern, func in self._handler_functions.items():
-                if re.search(pattern, text):
-                    try:
-                        func(Context(self, callback))
-                        self._logger.info({'status': 'SUCCESS', 'bot': str(self), 'request': callback_dict})
-                        response = PlainTextResponse('Success')
-                    except Exception as e:
-                        self._logger.error({'status': 'ERROR', 'bot': str(self), 'request': callback_dict},
-                                           exc_info=e)
-                        response = PlainTextResponse(str(e), status_code=500)
+        if callback.sender_type != 'user':  # only reply to users
+            await _success_response(scope, receive, send)
+            return
+        text = callback.text.lower().strip()
+        for pattern, func in self._handler_functions.items():
+            if re.search(pattern, text):
+                try:
+                    func(Context(self, callback))
+                    self._logger.info({'status': 'SUCCESS', 'bot': str(self), 'request': callback_dict})
+                    await _success_response(scope, receive, send)
+                    return
+                except Exception as e:
+                    self._logger.error({'status': 'ERROR', 'bot': str(self), 'request': callback_dict},
+                                       exc_info=e)
+                    response = PlainTextResponse(str(e), status_code=500)
                     await response(scope, receive, send)
+                    return
+        await _success_response(scope, receive, send)
+        return
 
     def add_callback_handler(self, regex_pattern: str, func: Callable[[Context], Any]) -> None:
         """
