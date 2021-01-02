@@ -4,11 +4,14 @@ groupme-bot
 A simple bot builder for GroupMe
 """
 from .application import Application
-from .attachment import ImageAttachment, LocationAttachment, SplitAttachment, EmojiAttachment, MentionsAttachment
+from .attachment import (
+    ImageAttachment, LocationAttachment, SplitAttachment, EmojiAttachment, MentionsAttachment, parse_attachment
+)
 from .bot import Bot, Context
 from .callback import Callback
+from .groupme import GroupMe
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 __author__ = "Branden Colen"
 __all__ = [
     "Application",
@@ -19,5 +22,7 @@ __all__ = [
     "ImageAttachment",
     "LocationAttachment",
     "MentionsAttachment",
-    "SplitAttachment"
+    "SplitAttachment",
+    "parse_attachment",
+    "GroupMe"
 ]

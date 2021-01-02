@@ -1,6 +1,10 @@
 from unittest import TestCase
 
-from ..attachment import *
+from ..attachment import (
+    InvalidAttachment, ImageAttachment, LocationAttachment,
+    SplitAttachment, EmojiAttachment, MentionsAttachment,
+    parse_attachment
+)
 
 
 class Test(TestCase):
