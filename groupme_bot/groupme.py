@@ -28,7 +28,7 @@ class GroupMe(object):
     __slots__ = 'groupme_api_token'
 
     def __init__(self, groupme_api_token: str):
-        self.groupme_api_token = groupme_api_token
+        self.groupme_api_token: str = groupme_api_token
 
     def image_url_to_groupme_image_url(self, image_url: str) -> str:
         """

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import logging
 import re
 from json.decoder import JSONDecodeError
 from typing import Any, List, Callable, Optional
@@ -15,8 +14,8 @@ from .attachment import Attachment, MentionsAttachment
 from .callback import Callback
 from .groupme import GroupMe
 
-
 _success_response = PlainTextResponse('Success')
+
 
 class HandlerPatternExistsError(Exception):
     pass
@@ -32,8 +31,8 @@ class Context(object):
         :param Bot bot:
         :param Callback callback:
         """
-        self._bot = bot
-        self._callback = callback
+        self._bot: Bot = bot
+        self._callback: Callback = callback
 
     @property
     def bot(self) -> Bot:
@@ -45,7 +44,7 @@ class Context(object):
 
 
 class Bot(GroupMe):
-    __slots__ = ('bot_name', 'bot_id', 'groupme_api_token', 'group_id', '_handler_functions', '_jobs', '_logger')
+    __slots__ = ('bot_name', 'bot_id', 'groupme_api_token', 'group_id', '_handler_functions', '_jobs')
 
     def __init__(self, bot_name: str, bot_id: str, groupme_api_token: str, group_id: str):
         """
@@ -65,7 +64,6 @@ class Bot(GroupMe):
 
         self._handler_functions = {}
         self._jobs = []
-        self._logger = logging.getLogger(bot_name)
 
     @property
     def cron_jobs(self) -> List[dict]:
@@ -97,12 +95,9 @@ class Bot(GroupMe):
             if re.search(pattern, text):
                 try:
                     func(Context(self, callback))
-                    self._logger.info({'status': 'SUCCESS', 'bot': str(self), 'request': callback_dict})
                     await _success_response(scope, receive, send)
                     return
                 except Exception as e:
-                    self._logger.error({'status': 'ERROR', 'bot': str(self), 'request': callback_dict},
-                                       exc_info=e)
                     response = PlainTextResponse(str(e), status_code=500)
                     await response(scope, receive, send)
                     return

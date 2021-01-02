@@ -29,9 +29,7 @@ class Application(object):
         router object. Each bot is assigned an endpoint path and requests to that endpoint will be handled by the
         associated bot.
         """
-        # start the cron scheduler and setup a shutdown on exit
         self._scheduler: AsyncIOScheduler = AsyncIOScheduler()
-        atexit.register(lambda: self._scheduler.shutdown(wait=False))
 
         async def _summary(scope: Scope, receive: Receive, send: Send):
             response = JSONResponse({
@@ -61,6 +59,10 @@ class Application(object):
             await _not_allowed(scope, receive, send)
             return
         await handler(scope, receive, send)
+
+    def _start_scheduler(self):
+        atexit.register(lambda: self._scheduler.shutdown(wait=False))
+        self._scheduler.start()
 
     @property
     def routes(self) -> Dict[str, Dict[str, ASGIApp]]:
@@ -134,4 +136,4 @@ class Application(object):
                 **job['kwargs']
             )
             if not self._scheduler.running:
-                self._scheduler.start()
+                self._start_scheduler()
