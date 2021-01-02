@@ -1,5 +1,4 @@
 import re
-import time
 
 from groupme_bot import Application, Bot, Context, ImageAttachment, LocationAttachment
 
@@ -9,7 +8,6 @@ app = Application()
 
 # define handler functions
 async def cron_task(ctx: Context):
-    t = time.time()
     print('Cron triggered for ' + str(ctx.bot))
 
 
@@ -30,7 +28,7 @@ def gif_search(ctx: Context):
     print('gif_search for ' + str(ctx.bot))
     sr = re.search(r'^\\gif([a-zA-Z0-9 -_]+)', ctx.callback.text)
     if sr:
-        query_string = sr.group(1).strip()
+        # query_string = sr.group(1).strip()
         # gif_result = search_for_gif(query_string)
         # ctx.bot.post_message(gif_result)
         print("implement something like this ^")
