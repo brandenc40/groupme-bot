@@ -5,7 +5,7 @@ import re
 from json.decoder import JSONDecodeError
 from typing import Any, List, Callable, Optional
 
-import requests
+import httpx
 from starlette.requests import Request
 from starlette.responses import PlainTextResponse
 from starlette.types import Scope, Receive, Send
@@ -159,9 +159,9 @@ class Bot(GroupMe):
             "text": msg,
             "attachments": attachments
         }
-        response = requests.post(
+        response = httpx.post(
             'https://api.groupme.com/v3/bots/post',
-            data=json.dumps(data),
+            data=data,
             headers={'Content-Type': 'application/json'}
         )
         response.raise_for_status()
