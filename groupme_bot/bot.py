@@ -143,7 +143,7 @@ class Bot(GroupMe):
             'kwargs': kwargs
         })
 
-    def post_message(self, msg: str, attachments: Optional[List[Attachment]] = None) -> requests.Response:
+    def post_message(self, msg: str, attachments: Optional[List[Attachment]] = None) -> httpx.Response:
         """
         Posts a bot message to the group with optional attachments.
         :param str msg: The message to be sent
