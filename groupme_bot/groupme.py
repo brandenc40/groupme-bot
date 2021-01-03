@@ -1,4 +1,4 @@
-import requests
+import httpx
 
 _status_codes = {
     200: "Success!",
@@ -36,31 +36,32 @@ class GroupMe(object):
         :param str image_url: The URL for any image
         :return str: The URL for the converted GroupMe image
         """
-        res = requests.get(image_url)
-        res.raise_for_status()
-        headers = {
-            'X-Access-Token': self.groupme_api_token,
-            'Content-Type': res.headers['Content-type'],
-        }
-        res = requests.post(
-            'https://image.groupme.com/pictures',
-            headers=headers,
-            data=res.content
-        )
-        res.raise_for_status()
-        res = res.json()
-        return res['payload']['picture_url']
+        with httpx.Client() as client:
+            res = client.get(image_url)
+            res.raise_for_status()
+            headers = {
+                'X-Access-Token': self.groupme_api_token,
+                'Content-Type': res.headers['Content-type'],
+            }
+            res = client.post(
+                'https://image.groupme.com/pictures',
+                headers=headers,
+                content=res.content
+            )
+            res.raise_for_status()
+            res = res.json()
+            return res['payload']['picture_url']
 
     def get_group(self, group_id: str) -> dict:
         """
         Get a summary of the group from the GroupMe API
         :return dict:
         """
-        return self.__get('/groups/' + group_id)
+        return self.__get(f'/groups/{group_id}')
 
     def __get(self, path: str) -> dict:
-        res = requests.get(
-            'https://api.groupme.com/v3' + path,
+        res = httpx.get(
+            f'https://api.groupme.com/v3/{path}',
             params={'token': self.groupme_api_token}
         )
         res.raise_for_status()

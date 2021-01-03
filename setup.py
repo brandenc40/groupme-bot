@@ -21,10 +21,11 @@ setup(
     long_description=read('README.md'),
     long_description_content_type="text/markdown",
     install_requires=[
-        'APScheduler>=3.6',
-        'requests>=2.25',
-        'starlette>=0.14',
-        'uvicorn>=0.13'
+        'APScheduler~=3.6',
+        'httpx~=0.16.1',
+        'starlette~=0.14',
+        'uvicorn~=0.13',
+        'uvloop~=0.14.0'
     ],
     python_requires='>=3.6',  # for use of f strings
     classifiers=[
