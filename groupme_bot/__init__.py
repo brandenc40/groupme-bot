@@ -11,7 +11,7 @@ from .bot import Bot, Context
 from .callback import Callback
 from .groupme import GroupMe
 
-__version__ = "0.2.4"
+__version__ = "0.2.5"
 __author__ = "Branden Colen"
 __all__ = [
     "Application",
