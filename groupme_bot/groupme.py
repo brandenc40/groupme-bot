@@ -61,7 +61,7 @@ class GroupMe(object):
 
     def __get(self, path: str) -> dict:
         res = httpx.get(
-            f'https://api.groupme.com/v3/{path}',
+            f'https://api.groupme.com/v3{path}',
             params={'token': self.groupme_api_token}
         )
         res.raise_for_status()
