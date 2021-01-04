@@ -161,7 +161,7 @@ class Bot(GroupMe):
         }
         response = httpx.post(
             'https://api.groupme.com/v3/bots/post',
-            data=data,
+            json=data,
             headers={'Content-Type': 'application/json'}
         )
         response.raise_for_status()
