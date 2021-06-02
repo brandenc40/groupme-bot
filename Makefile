@@ -1,3 +1,5 @@
+VENV := venv
+
 .PHONY: clean-pyc
 clean-pyc:
 	@echo "Removing pyc files"
@@ -15,16 +17,23 @@ clean-build:
 release: build upload clean-build
 
 .PHONY: build
-build: clean-build
-	@pip3 install twine wheel
-	@python3 setup.py sdist
-	@python3 setup.py bdist_wheel --universal
+build: venv clean-build
+	@./venv/bin/pip3 install twine wheel
+	@./venv/bin/python3 setup.py sdist
+	@./venv/bin/python3 setup.py bdist_wheel --universal
 
 .PHONY: upload
-upload:
-	@twine upload dist/*
+upload: venv
+	@./venv/bin/twine upload dist/*
 
 .PHONY: run-example
-run-example:
-	@python setup.py install
-	@uvicorn examples.multi-bot-router.main:app --workers=1
+run-example: venv
+	@./venv/bin/python3 setup.py install
+	@./venv/bin/uvicorn examples.multi-bot-router.main:app --workers=1
+
+$(VENV)/bin/activate: requirements.txt
+	python3 -m venv $(VENV)
+	./$(VENV)/bin/pip install -r requirements.txt
+
+# venv is a shortcut target
+venv: $(VENV)/bin/activate
