@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import json
 import re
+from collections import OrderedDict
 from json.decoder import JSONDecodeError
 from typing import Any, List, Callable, Optional
 
@@ -62,7 +62,7 @@ class Bot(GroupMe):
         self.groupme_api_token = groupme_api_token
         self.group_id = group_id
 
-        self._handler_functions = {}
+        self._handler_functions: OrderedDict = OrderedDict()
         self._jobs = []
 
     @property
