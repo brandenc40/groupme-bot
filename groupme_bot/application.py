@@ -10,6 +10,7 @@ from .bot import Bot
 
 GET = 'GET'
 POST = 'POST'
+HEAD = 'HEAD'
 
 _not_allowed = PlainTextResponse('405 Method Not Allowed', status_code=405)
 _not_found = PlainTextResponse('404 Not Found', status_code=404)
@@ -126,7 +127,7 @@ class Application(object):
                                    f"You must use a new route for each bot.")
 
         # store the bot for call routing
-        self._route_tree[callback_path] = {POST: bot, GET: _ping_handler}
+        self._route_tree[callback_path] = {POST: bot, GET: _ping_handler, HEAD: _ping_handler}
 
         # add any scheduler jobs
         for job in bot.cron_jobs:
