@@ -46,7 +46,7 @@ class Application(object):
             await response(scope, receive, send)
 
         self._route_tree: Dict[str, Dict[str, ASGIApp]] = {
-            '/': {GET: _summary},
+            '/': {GET: _summary, HEAD: _ping_handler},
             '/_health': {GET: _health}
         }
 
