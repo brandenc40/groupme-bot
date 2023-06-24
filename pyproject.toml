@@ -1,0 +1,31 @@
+[tool.poetry]
+name = "groupme-bot"
+version = "0.2.13"
+description = "A simple bot builder for GroupMe"
+authors = ["Branden Colen <brandencolen@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/brandenc40/groupme-bot"
+classifiers = [
+    'Development Status :: 4 - Beta',
+    'Programming Language :: Python :: 3.6',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Intended Audience :: Developers',
+    'Topic :: Software Development :: Libraries :: Python Modules'
+]
+packages = [{ include = "groupme_bot" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+APScheduler = "^3.10.1"
+starlette = "^0.28.0"
+uvicorn = { extras = ["standard"], version = "^0.22.0" }
+httpx = "^0.24.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
